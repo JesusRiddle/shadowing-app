@@ -36,7 +36,14 @@ Habilita **Google Drive API** en [Google Cloud Console](https://console.cloud.go
 
 ## Traducción al español
 
-Automática por defecto (MyMemory, gratis). Para mayor precisión, sube a Drive un doc con el mismo nombre + `(ES)` traducido por Gemini (misma cantidad de frases) — la app lo usa en vez de MyMemory.
+Dos fuentes, activables por separado en Ajustes:
+
+- **📄 Archivo gemelo (ES) en Drive** — prioridad. Sube a la misma carpeta un doc con el mismo nombre + `(ES)`, traducido por Gemini.
+- **🌐 MyMemory** — automática, gratis, respaldo.
+
+Con ambas activas: primero intenta el archivo (ES); si no hay nada en esa frase, usa MyMemory. Con solo (ES) activo: nunca cae a MyMemory — si el archivo no existe o está desfasado, muestra igual lo que haya en esa posición (para detectar el desfase). Junto a la traducción aparece un ícono discreto (Drive o 🌐) según de dónde salió.
+
+En Ajustes también puedes **purgar la caché de textos** o **vaciar Mi vocabulario** por separado.
 
 ## Mi vocabulario (🔖)
 

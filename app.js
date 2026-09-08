@@ -21,8 +21,12 @@ const els = {
 
   themeModeRadios: document.querySelectorAll('input[name="themeMode"]'),
 
-  translateEnabled: document.getElementById('translateEnabled'),
+  translateSourceDoc: document.getElementById('translateSourceDoc'),
+  translateSourceMyMemory: document.getElementById('translateSourceMyMemory'),
   translateApiKey: document.getElementById('translateApiKey'),
+
+  purgeLibraryBtn: document.getElementById('purgeLibraryBtn'),
+  purgeVocabBtn: document.getElementById('purgeVocabBtn'),
 
   driveApiKey: document.getElementById('driveApiKey'),
   driveFolderId: document.getElementById('driveFolderId'),
@@ -52,6 +56,8 @@ const els = {
   indexBadge: document.getElementById('indexBadge'),
   starBtn: document.getElementById('starBtn'),
   sentenceDisplay: document.getElementById('sentenceDisplay'),
+  translationRow: document.getElementById('translationRow'),
+  translationSourceIcon: document.getElementById('translationSourceIcon'),
   translationDisplay: document.getElementById('translationDisplay'),
   speedPresets: document.getElementById('speedPresets'),
   cardRateRange: document.getElementById('cardRateRange'),
@@ -99,7 +105,8 @@ const Settings = {
     rate: 1,
     driveApiKey: '',
     driveFolderId: '',
-    translateEnabled: false,
+    translateSourceDoc: true,
+    translateSourceMyMemory: true,
     translateApiKey: '',
     theme: 'system',
   },
@@ -124,7 +131,8 @@ function applySettingsToUI() {
   els.rateValue.textContent = `${Settings.data.rate}x`;
   els.driveApiKey.value = Settings.data.driveApiKey || '';
   els.driveFolderId.value = Settings.data.driveFolderId || '';
-  els.translateEnabled.checked = !!Settings.data.translateEnabled;
+  els.translateSourceDoc.checked = !!Settings.data.translateSourceDoc;
+  els.translateSourceMyMemory.checked = !!Settings.data.translateSourceMyMemory;
   els.translateApiKey.value = Settings.data.translateApiKey || '';
   document.querySelector(`input[name="themeMode"][value="${Settings.data.theme}"]`).checked = true;
   applyTheme();
@@ -166,14 +174,27 @@ els.saveSettingsBtn.addEventListener('click', () => {
   Settings.data.rate = parseFloat(els.rateRange.value);
   Settings.data.driveApiKey = els.driveApiKey.value.trim();
   Settings.data.driveFolderId = els.driveFolderId.value.trim();
-  Settings.data.translateEnabled = els.translateEnabled.checked;
+  Settings.data.translateSourceDoc = els.translateSourceDoc.checked;
+  Settings.data.translateSourceMyMemory = els.translateSourceMyMemory.checked;
   Settings.data.translateApiKey = els.translateApiKey.value.trim();
   Settings.data.theme = document.querySelector('input[name="themeMode"]:checked').value;
   Settings.save();
   syncSpeedUI(Settings.data.rate);
   applyTheme();
-  els.translationDisplay.classList.toggle('hidden', !Settings.data.translateEnabled);
+  els.translationRow.classList.toggle('hidden', !(Settings.data.translateSourceDoc || Settings.data.translateSourceMyMemory));
   closeSettings();
+});
+
+els.purgeLibraryBtn.addEventListener('click', () => {
+  if (!confirm('¿Borrar todos los textos guardados en "Tu biblioteca de práctica" de este dispositivo? Esto no afecta tus documentos de Drive, solo lo cargado en caché local.')) return;
+  localStorage.removeItem(RecentTexts.KEY);
+  renderRecentList();
+});
+
+els.purgeVocabBtn.addEventListener('click', () => {
+  if (!confirm('¿Vaciar por completo "Mi vocabulario"? Esta acción no se puede deshacer.')) return;
+  localStorage.removeItem(VocabList.KEY);
+  renderVocabList();
 });
 
 /* ---------- Tema: Claro / Oscuro / Sistema ---------- */
@@ -335,15 +356,21 @@ function countWords(text) {
 }
 
 function splitIntoSentences(text) {
-  const cleaned = text.replace(/\s+/g, ' ').trim();
-  if (!cleaned) return [];
+  // Primero por líneas: así un título sin punto final (ej. un encabezado)
+  // no se pega con el párrafo siguiente solo por no tener puntuación.
+  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return [];
 
-  const matches = cleaned.match(/[^.,;:!?]+[.,;:!?]+/g) || [];
-  const rawPieces = matches.map(s => s.trim()).filter(Boolean);
+  const rawPieces = [];
+  lines.forEach(line => {
+    const cleaned = line.replace(/\s+/g, ' ').trim();
+    const matches = cleaned.match(/[^.,;:!?]+[.,;:!?]+/g) || [];
+    matches.forEach(m => rawPieces.push(m.trim()));
 
-  const joined = matches.join('');
-  const remainder = cleaned.slice(joined.length).trim();
-  if (remainder) rawPieces.push(remainder);
+    const joined = matches.join('');
+    const remainder = cleaned.slice(joined.length).trim();
+    if (remainder) rawPieces.push(remainder);
+  });
 
   const pieces = [];
   let buffer = '';
@@ -487,40 +514,117 @@ function loadEntryAndStart(item, mode) {
    ============================================================ */
 
 const Translator = {
+  CACHE_KEY: 'shadowing_translate_cache_v1',
   cache: {},
-  async translate(text) {
-    if (this.cache[text]) return this.cache[text];
+
+  loadCache() {
+    try { this.cache = JSON.parse(localStorage.getItem(this.CACHE_KEY)) || {}; }
+    catch (e) { this.cache = {}; }
+  },
+  saveCache() {
+    try { localStorage.setItem(this.CACHE_KEY, JSON.stringify(this.cache)); }
+    catch (e) { /* si se llena el storage, simplemente no persistimos */ }
+  },
+
+  async fetchOnce(text) {
     const email = Settings.data.translateApiKey ? `&de=${encodeURIComponent(Settings.data.translateApiKey)}` : '';
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|es${email}`;
-    const resp = await fetch(url);
-    const data = await resp.json();
-    if (!data.responseData || !data.responseData.translatedText) {
-      throw new Error('respuesta inesperada del servicio de traducción');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    try {
+      const resp = await fetch(url, { signal: controller.signal });
+      const data = await resp.json();
+      if (!data.responseData || !data.responseData.translatedText) {
+        throw new Error('respuesta inesperada del servicio de traducción');
+      }
+      return data.responseData.translatedText;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    const translated = data.responseData.translatedText;
-    this.cache[text] = translated;
-    return translated;
+  },
+
+  async translate(text) {
+    if (this.cache[text]) return this.cache[text];
+    try {
+      const translated = await this.fetchOnce(text);
+      this.cache[text] = translated;
+      this.saveCache();
+      return translated;
+    } catch (err) {
+      // Un reintento antes de rendirnos (el servicio gratuito a veces da timeout).
+      const translated = await this.fetchOnce(text);
+      this.cache[text] = translated;
+      this.saveCache();
+      return translated;
+    }
   },
 };
+Translator.loadCache();
+
+/**
+ * Traducción al español de sentences[index].
+ * Prioridad: el doc emparejado "(ES)" por índice (offline, sin llamadas de red)
+ * — aunque no tenga exactamente el mismo número de frases, se usa si existe
+ * una frase en esa posición. Solo si no hay nada ahí, se recurre a MyMemory.
+ */
+/**
+ * Traducción al español de sentences[index], respetando las casillas de Ajustes:
+ * - Ambas activas: prioridad al archivo (ES) por índice; si no hay nada ahí, MyMemory.
+ * - Solo (ES) activo: solo usa el archivo, por índice, aunque esté desfasado o falte
+ *   (nunca recurre a MyMemory) — así se puede detectar un desfase de puntuación.
+ * - Solo MyMemory activo: siempre traduce en automático, ignora cualquier archivo (ES).
+ * Deja registrado en `lastTranslationSource` de dónde salió ('doc' | 'mymemory'),
+ * para que la tarjeta muestre el ícono correspondiente.
+ */
+let lastTranslationSource = null;
 
 async function getSpanishFor(index) {
-  if (pairedTranslationSentences && pairedTranslationSentences.sentences.length === sentences.length) {
+  const useDoc = Settings.data.translateSourceDoc;
+  const useMyMemory = Settings.data.translateSourceMyMemory;
+
+  if (useDoc && pairedTranslationSentences && pairedTranslationSentences.sentences[index] !== undefined) {
+    lastTranslationSource = 'doc';
     return pairedTranslationSentences.sentences[index];
   }
-  return Translator.translate(sentences[index]);
+
+  if (useMyMemory) {
+    lastTranslationSource = 'mymemory';
+    return Translator.translate(sentences[index]);
+  }
+
+  lastTranslationSource = null;
+  if (useDoc) {
+    throw new Error('el archivo (ES) no tiene nada en esta posición');
+  }
+  throw new Error('activa al menos un método de traducción en Ajustes');
+}
+
+function renderTranslationSourceIcon(source) {
+  if (source === 'doc') {
+    els.translationSourceIcon.innerHTML = '<img src="icons/google-drive.png" alt="Drive" title="Traducción desde el archivo (ES) de Drive">';
+  } else if (source === 'mymemory') {
+    els.translationSourceIcon.innerHTML = '<span class="mymemory-icon" title="Traducción automática (MyMemory)">🌐</span>';
+  } else {
+    els.translationSourceIcon.innerHTML = '';
+  }
 }
 
 async function showTranslationFor(index) {
-  if (!Settings.data.translateEnabled) {
-    els.translationDisplay.classList.add('hidden');
+  const anyEnabled = Settings.data.translateSourceDoc || Settings.data.translateSourceMyMemory;
+  if (!anyEnabled) {
+    els.translationRow.classList.add('hidden');
     return;
   }
-  els.translationDisplay.classList.remove('hidden');
+  els.translationRow.classList.remove('hidden');
   els.translationDisplay.textContent = 'Traduciendo...';
+  renderTranslationSourceIcon(null);
   try {
-    els.translationDisplay.textContent = await getSpanishFor(index);
+    const text = await getSpanishFor(index);
+    els.translationDisplay.textContent = text;
+    renderTranslationSourceIcon(lastTranslationSource);
   } catch (err) {
-    els.translationDisplay.textContent = `(error al traducir: ${err.message})`;
+    els.translationDisplay.textContent = `(sin traducción: ${err.message})`;
+    renderTranslationSourceIcon(null);
   }
 }
 
@@ -1033,4 +1137,4 @@ applySettingsToUI();
 renderRecentList();
 updateWordCount();
 updateResumeButton();
-els.translationDisplay.classList.toggle('hidden', !Settings.data.translateEnabled);
+els.translationRow.classList.toggle('hidden', !(Settings.data.translateSourceDoc || Settings.data.translateSourceMyMemory));

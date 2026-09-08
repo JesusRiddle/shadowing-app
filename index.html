@@ -1,311 +1,308 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Shadowing English — Práctica de pronunciación</title>
-  <meta name="theme-color" content="#6D5CE7">
-  <meta name="description"
-    content="Practica pronunciación en inglés por shadowing, con traducción y vocabulario personal.">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icons/icon-192.png">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Shadowing English — Práctica de pronunciación</title>
+<meta name="theme-color" content="#6D5CE7">
+<meta name="description" content="Practica pronunciación en inglés por shadowing, con traducción y vocabulario personal.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
 
-  <header class="app-header">
-    <div class="brand">
-      <span class="brand-mark">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="3" y="3" width="12" height="12" rx="3" fill="currentColor" opacity="0.55" />
-          <rect x="9" y="9" width="12" height="12" rx="3" fill="currentColor" />
-        </svg>
-      </span>
-      <div>
-        <h1>Shadowing<br><span>English</span></h1>
-      </div>
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="12" height="12" rx="3" fill="currentColor" opacity="0.55"/>
+        <rect x="9" y="9" width="12" height="12" rx="3" fill="currentColor"/>
+      </svg>
+    </span>
+    <div><h1>Shadowing<br><span>English</span></h1></div>
+  </div>
+  <div class="header-actions">
+    <button id="reverseBtn" class="icon-btn" title="Práctica de traducción">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 7h11l-3-3M17 17H6l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button id="vocabBtn" class="icon-btn" title="Mi vocabulario">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v16.2a.6.6 0 0 1-.94.49L12 17l-5.06 3.7A.6.6 0 0 1 6 20.2V4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <button id="settingsBtn" class="icon-btn" title="Ajustes">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="9" cy="6" r="2.2" fill="var(--card-bg)" stroke="currentColor" stroke-width="2"/>
+        <circle cx="16" cy="12" r="2.2" fill="var(--card-bg)" stroke="currentColor" stroke-width="2"/>
+        <circle cx="10" cy="18" r="2.2" fill="var(--card-bg)" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<!-- ===================== OVERLAY: AJUSTES (modal) ===================== -->
+<div id="settingsOverlay" class="overlay hidden">
+  <div class="overlay-panel">
+    <div class="overlay-header">
+      <h2>Ajustes</h2>
+      <button id="closeSettingsBtn" class="close-btn" title="Cerrar">✕</button>
     </div>
-    <div class="header-actions">
-      <button id="reverseBtn" class="icon-btn" title="Práctica de traducción">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M7 7h11l-3-3M17 17H6l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" />
-        </svg>
-      </button>
-      <button id="vocabBtn" class="icon-btn" title="Mi vocabulario">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M6 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v16.2a.6.6 0 0 1-.94.49L12 17l-5.06 3.7A.6.6 0 0 1 6 20.2V4z"
-            stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-        </svg>
-      </button>
-      <button id="settingsBtn" class="icon-btn" title="Ajustes">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          <circle cx="9" cy="6" r="2.2" fill="var(--card-bg)" stroke="currentColor" stroke-width="2" />
-          <circle cx="16" cy="12" r="2.2" fill="var(--card-bg)" stroke="currentColor" stroke-width="2" />
-          <circle cx="10" cy="18" r="2.2" fill="var(--card-bg)" stroke="currentColor" stroke-width="2" />
-        </svg>
-      </button>
+    <div class="overlay-body">
+
+      <section>
+        <h3>Voz</h3>
+        <label class="radio-row">
+          <input type="radio" name="ttsMode" value="browser" checked>
+          <span>Voces del navegador (gratis)</span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="ttsMode" value="external">
+          <span>API de voz externa (ElevenLabs u otra)</span>
+        </label>
+
+        <div id="browserVoiceOptions">
+          <label for="voiceSelect">Elegir voz:</label>
+          <select id="voiceSelect"></select>
+        </div>
+
+        <div id="externalVoiceOptions" class="hidden">
+          <label for="externalEndpoint">Endpoint de la API (URL):</label>
+          <input type="text" id="externalEndpoint" placeholder="https://api.elevenlabs.io/v1/text-to-speech/VOICE_ID">
+          <label for="externalApiKey">API key:</label>
+          <input type="password" id="externalApiKey" placeholder="Tu API key">
+          <p class="hint">Pensado para ElevenLabs. Para otro proveedor, ajusta <code>speakExternal</code> en app.js.</p>
+        </div>
+
+        <label for="rateRange">Velocidad de reproducción: <span id="rateValue">1.0x</span></label>
+        <input type="range" id="rateRange" min="0.5" max="1.5" step="0.1" value="1">
+      </section>
+
+      <section>
+        <h3>Tema</h3>
+        <div class="theme-options">
+          <label><input type="radio" name="themeMode" value="light"><span>☀️ Claro</span></label>
+          <label><input type="radio" name="themeMode" value="dark"><span>🌙 Oscuro</span></label>
+          <label><input type="radio" name="themeMode" value="system"><span>⚙️ Sistema</span></label>
+        </div>
+      </section>
+
+      <section>
+        <h3>Traducción al español</h3>
+        <label class="radio-row">
+          <input type="checkbox" id="translateSourceDoc">
+          <span>📄 Por archivo gemelo (ES) en Drive — prioridad</span>
+        </label>
+        <label class="radio-row">
+          <input type="checkbox" id="translateSourceMyMemory">
+          <span>🌐 Automática con MyMemory — respaldo</span>
+        </label>
+        <label for="translateApiKey">Tu correo (opcional, sube el límite diario gratuito de MyMemory):</label>
+        <input type="text" id="translateApiKey" placeholder="tu@correo.com (opcional)">
+        <p class="hint">Con ambas activas: primero intenta con el archivo (ES); si no hay nada ahí, usa MyMemory. Con solo (ES) activo: si el archivo no existe o está desfasado, igual muestra lo que haya en esa posición (para que puedas detectar el desfase). Con solo MyMemory activo: siempre traduce en automático, ignorando cualquier archivo (ES).</p>
+      </section>
+
+      <section>
+        <h3>Google Drive</h3>
+        <label for="driveApiKey">API key de Google Cloud (Drive API):</label>
+        <input type="text" id="driveApiKey" placeholder="Tu API key de Google Cloud">
+        <label for="driveFolderId">ID de la carpeta pública de Drive:</label>
+        <input type="text" id="driveFolderId" placeholder="Ej: 1AbCdEfGhIjKlMnOpQrStUvWxYz">
+        <p class="hint">El ID es la parte de la URL después de <code>/folders/</code>. La carpeta y los Docs deben ser públicos ("Cualquiera con el enlace").</p>
+      </section>
+
+      <section>
+        <h3>Datos guardados en este dispositivo</h3>
+        <button id="purgeLibraryBtn" class="ghost-btn">🗑 Purgar caché de textos cargados</button>
+        <button id="purgeVocabBtn" class="ghost-btn">🗑 Vaciar Mi vocabulario</button>
+        <p class="hint">Cada uno borra solo lo suyo, por separado. Útil para limpiar datos viejos o de prueba.</p>
+      </section>
+
+      <button id="saveSettingsBtn" class="primary-btn">Guardar ajustes</button>
     </div>
-  </header>
+  </div>
+</div>
 
-  <!-- ===================== OVERLAY: AJUSTES (modal) ===================== -->
-  <div id="settingsOverlay" class="overlay hidden">
-    <div class="overlay-panel">
-      <div class="overlay-header">
-        <h2>Ajustes</h2>
-        <button id="closeSettingsBtn" class="close-btn" title="Cerrar">✕</button>
-      </div>
-      <div class="overlay-body">
-
-        <section>
-          <h3>Voz</h3>
-          <label class="radio-row">
-            <input type="radio" name="ttsMode" value="browser" checked>
-            <span>Voces del navegador (gratis)</span>
-          </label>
-          <label class="radio-row">
-            <input type="radio" name="ttsMode" value="external">
-            <span>API de voz externa (ElevenLabs u otra)</span>
-          </label>
-
-          <div id="browserVoiceOptions">
-            <label for="voiceSelect">Elegir voz:</label>
-            <select id="voiceSelect"></select>
-          </div>
-
-          <div id="externalVoiceOptions" class="hidden">
-            <label for="externalEndpoint">Endpoint de la API (URL):</label>
-            <input type="text" id="externalEndpoint" placeholder="https://api.elevenlabs.io/v1/text-to-speech/VOICE_ID">
-            <label for="externalApiKey">API key:</label>
-            <input type="password" id="externalApiKey" placeholder="Tu API key">
-            <p class="hint">Pensado para ElevenLabs. Para otro proveedor, ajusta <code>speakExternal</code> en app.js.
-            </p>
-          </div>
-
-          <label for="rateRange">Velocidad de reproducción: <span id="rateValue">1.0x</span></label>
-          <input type="range" id="rateRange" min="0.5" max="1.5" step="0.1" value="1">
-        </section>
-
-        <section>
-          <h3>Tema</h3>
-          <div class="theme-options">
-            <label><input type="radio" name="themeMode" value="light"><span>☀️ Claro</span></label>
-            <label><input type="radio" name="themeMode" value="dark"><span>🌙 Oscuro</span></label>
-            <label><input type="radio" name="themeMode" value="system"><span>⚙️ Sistema</span></label>
-          </div>
-        </section>
-
-        <section>
-          <h3>Traducción al español</h3>
-          <label class="radio-row">
-            <input type="checkbox" id="translateEnabled">
-            <span>Mostrar traducción al español debajo de cada frase</span>
-          </label>
-          <label for="translateApiKey">Tu correo (opcional, sube el límite diario gratuito):</label>
-          <input type="text" id="translateApiKey" placeholder="tu@correo.com (opcional)">
-          <p class="hint">Usa MyMemory, gratis y sin facturación. Si cargas un texto de Drive y existe un doc con el
-            mismo nombre + " (ES)" en la misma carpeta, se usa esa traducción en vez de MyMemory.</p>
-        </section>
-
-        <section>
-          <h3>Google Drive</h3>
-          <label for="driveApiKey">API key de Google Cloud (Drive API):</label>
-          <input type="text" id="driveApiKey" placeholder="Tu API key de Google Cloud">
-          <label for="driveFolderId">ID de la carpeta pública de Drive:</label>
-          <input type="text" id="driveFolderId" placeholder="Ej: 1AbCdEfGhIjKlMnOpQrStUvWxYz">
-          <p class="hint">El ID es la parte de la URL después de <code>/folders/</code>. La carpeta y los Docs deben ser
-            públicos ("Cualquiera con el enlace").</p>
-        </section>
-
-        <button id="saveSettingsBtn" class="primary-btn">Guardar ajustes</button>
-      </div>
+<!-- ===================== VISTA: CARGAR TEXTO ===================== -->
+<main id="loadView" class="view">
+  <div class="hero">
+    <div class="hero-text">
+      <h2 class="hero-title">Let's start<br><span>practicing.</span></h2>
+      <p class="hero-sub">Importa un texto o pega el tuyo para convertirlo en frases y empezar a practicar.</p>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="82" cy="78" r="80" fill="var(--primary-soft)"/>
+        <g transform="translate(34,26) rotate(-6)">
+          <rect x="0" y="0" width="92" height="110" rx="12" fill="var(--card-bg)" stroke="var(--border)" stroke-width="1.5"/>
+          <rect x="16" y="22" width="60" height="7" rx="3.5" fill="var(--border)"/>
+          <rect x="16" y="38" width="60" height="7" rx="3.5" fill="var(--border)"/>
+          <rect x="16" y="54" width="42" height="7" rx="3.5" fill="var(--border)"/>
+          <rect x="16" y="70" width="52" height="7" rx="3.5" fill="var(--border)"/>
+          <text x="64" y="26" font-size="34" fill="var(--primary)" font-family="Georgia, serif">"</text>
+        </g>
+        <g transform="translate(118,20)">
+          <path d="M9 0l2.5 6.5L18 9l-6.5 2.5L9 18l-2.5-6.5L0 9l6.5-2.5z" fill="var(--primary)"/>
+        </g>
+      </svg>
     </div>
   </div>
 
-  <!-- ===================== VISTA: CARGAR TEXTO ===================== -->
-  <main id="loadView" class="view">
-    <div class="hero">
-      <div class="hero-text">
-        <h2 class="hero-title">Let's start<br><span>practicing.</span></h2>
-        <p class="hero-sub">Importa un texto o pega el tuyo para convertirlo en frases y empezar a practicar.</p>
-      </div>
-      <div class="hero-art" aria-hidden="true">
-        <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="80" cy="80" r="72" fill="var(--primary-soft)" />
-          <g transform="translate(38,30) rotate(-6)">
-            <rect x="0" y="0" width="84" height="100" rx="10" fill="var(--card-bg)" stroke="var(--border)"
-              stroke-width="1.5" />
-            <rect x="14" y="20" width="56" height="6" rx="3" fill="var(--border)" />
-            <rect x="14" y="34" width="56" height="6" rx="3" fill="var(--border)" />
-            <rect x="14" y="48" width="40" height="6" rx="3" fill="var(--border)" />
-            <rect x="14" y="62" width="48" height="6" rx="3" fill="var(--border)" />
-            <text x="60" y="24" font-size="30" fill="var(--primary)" font-family="Georgia, serif">"</text>
-          </g>
-          <g transform="translate(112,24)">
-            <path d="M8 0l2.2 5.8L16 8l-5.8 2.2L8 16l-2.2-5.8L0 8l5.8-2.2z" fill="var(--primary)" />
-          </g>
-        </svg>
-      </div>
+  <section class="card">
+    <button id="loadDriveBtn" class="drive-btn">
+      <img src="icons/google-drive.png" width="18" height="18" alt="Google Drive">
+      &nbsp;Importar de Google Drive
+    </button>
+    <div id="driveFileList" class="file-list hidden"></div>
+
+    <div class="divider"><span>o</span></div>
+
+    <label for="textInput">Pega tu texto en inglés aquí:</label>
+    <textarea id="textInput" rows="9" placeholder="Pega aquí el texto que te generó Gemini..."></textarea>
+    <div class="text-meta">
+      <span id="wordCountLabel">0 palabras</span>
+      <span id="loadedTitleLabel" class="loaded-title hidden"></span>
     </div>
 
-    <section class="card">
-      <button id="loadDriveBtn" class="drive-btn">
-        <img src="icons/logo_drive_2026_color_1x_web_48dp.png" width="18" height="18" alt="Google Drive">
-        &nbsp;Importar de Google Drive
-      </button>
-      <div id="driveFileList" class="file-list hidden"></div>
+    <button id="startShadowBtn" class="primary-btn">✨ Practicar Shadowing</button>
+    <button id="startTranslateBtn" class="secondary-btn">⇄ Practicar Traducción</button>
+    <button id="resumeBtn" class="ghost-btn hidden">↻ Continuar donde me quedé</button>
+  </section>
 
-      <div class="divider"><span>o</span></div>
-
-      <label for="textInput">Pega tu texto en inglés aquí:</label>
-      <textarea id="textInput" rows="9" placeholder="Pega aquí el texto que te generó Gemini..."></textarea>
-      <div class="text-meta">
-        <span id="wordCountLabel">0 palabras</span>
-        <span id="loadedTitleLabel" class="loaded-title hidden"></span>
-      </div>
-
-      <button id="startShadowBtn" class="primary-btn">✨ Practicar Shadowing</button>
-      <button id="startTranslateBtn" class="secondary-btn">⇄ Practicar Traducción</button>
-      <button id="resumeBtn" class="ghost-btn hidden">↻ Continuar donde me quedé</button>
-    </section>
-
-    <section class="card" id="recentTextsCard">
-      <div class="card-header-row">
-        <h2>Tu biblioteca de práctica</h2>
-      </div>
-      <div id="recentList" class="library-list"></div>
-    </section>
-  </main>
-
-  <!-- ===================== VISTA: PRÁCTICA (SHADOWING) ===================== -->
-  <main id="practiceView" class="view hidden">
-    <div class="progress-top">
-      <span id="progressLabel" class="progress-count">1 / 1</span>
-      <button id="backToTextBtn" class="pill-btn">← Regresar</button>
+  <section class="card" id="recentTextsCard">
+    <div class="card-header-row">
+      <h2>Tu biblioteca de práctica</h2>
     </div>
-    <div class="progress-track-wrap">
-      <input type="range" id="progressSlider" class="progress-track" min="0" max="0" value="0" step="1">
+    <div id="recentList" class="library-list"></div>
+  </section>
+</main>
+
+<!-- ===================== VISTA: PRÁCTICA (SHADOWING) ===================== -->
+<main id="practiceView" class="view hidden">
+  <div class="progress-top">
+    <span id="progressLabel" class="progress-count">1 / 1</span>
+    <button id="backToTextBtn" class="pill-btn">← Regresar</button>
+  </div>
+  <div class="progress-track-wrap">
+    <input type="range" id="progressSlider" class="progress-track" min="0" max="0" value="0" step="1">
+  </div>
+  <p id="progressPercent" class="progress-percent">0% completado</p>
+
+  <section class="sentence-card" id="sentenceCard">
+    <span id="indexBadge" class="index-badge">1</span>
+    <button id="starBtn" class="star-btn" title="Marcar frase como difícil">☆</button>
+    <p id="sentenceDisplay">—</p>
+    <div class="card-divider" id="cardDivider"></div>
+    <div id="translationRow" class="translation-row hidden">
+      <span id="translationSourceIcon" class="translation-source-icon"></span>
+      <p id="translationDisplay" class="translation">—</p>
     </div>
-    <p id="progressPercent" class="progress-percent">0% completado</p>
+  </section>
 
-    <section class="sentence-card" id="sentenceCard">
-      <span id="indexBadge" class="index-badge">1</span>
-      <button id="starBtn" class="star-btn" title="Marcar frase como difícil">☆</button>
-      <p id="sentenceDisplay">—</p>
-      <div class="card-divider" id="cardDivider"></div>
-      <p id="translationDisplay" class="translation hidden">—</p>
-    </section>
+  <div class="controls">
+    <button id="prevBtn" class="control-btn" title="Frase anterior">⏮</button>
+    <button id="playBtn" class="control-btn play" title="Reproducir">▶</button>
+    <button id="repeatBtn" class="control-btn" title="Repetir esta frase">↻</button>
+    <button id="nextBtn" class="control-btn" title="Siguiente frase">⏭</button>
+  </div>
 
-    <div class="controls">
-      <button id="prevBtn" class="control-btn" title="Frase anterior">⏮</button>
-      <button id="playBtn" class="control-btn play" title="Reproducir">▶</button>
-      <button id="repeatBtn" class="control-btn" title="Repetir esta frase">↻</button>
-      <button id="nextBtn" class="control-btn" title="Siguiente frase">⏭</button>
+  <div class="speed-block">
+    <p class="speed-label">Velocidad de reproducción</p>
+    <div class="speed-presets" id="speedPresets">
+      <button data-rate="0.75">0.75x</button>
+      <button data-rate="1">1x</button>
+      <button data-rate="1.25">1.25x</button>
+      <button data-rate="1.5">1.5x</button>
     </div>
-
-    <div class="speed-block">
-      <p class="speed-label">Velocidad de reproducción</p>
-      <div class="speed-presets" id="speedPresets">
-        <button data-rate="0.75">0.75x</button>
-        <button data-rate="1">1x</button>
-        <button data-rate="1.25">1.25x</button>
-        <button data-rate="1.5">1.5x</button>
-      </div>
-      <div class="speed-slider-row">
-        <span class="speed-icon">🐢</span>
-        <input type="range" id="cardRateRange" min="0.5" max="1.5" step="0.05" value="1">
-        <span class="speed-icon">🐇</span>
-      </div>
-    </div>
-
-    <p class="tip-box">💡 Tip: mantén presionada una palabra para traducirla y guardarla en tu vocabulario.</p>
-  </main>
-
-  <!-- ===================== VISTA: MODO INVERSO / TRADUCCIÓN ===================== -->
-  <main id="reverseView" class="view hidden reverse-theme">
-    <div class="section-banner">
-      <span class="section-banner-icon">⇄</span>
-      <div>
-        <p class="section-banner-title">Práctica de traducción</p>
-        <p class="section-banner-sub" id="reverseDirectionLabel">Español → Inglés</p>
-      </div>
-      <button id="reverseSwapBtn" class="pill-btn light" title="Invertir dirección">⇄ Invertir</button>
-    </div>
-
-    <div class="progress-top">
-      <span id="reverseProgressLabel" class="progress-count">1 / 1</span>
-      <button id="backFromReverseBtn" class="pill-btn">← Regresar</button>
-    </div>
-    <div class="progress-track-wrap">
-      <input type="range" id="reverseProgressSlider" class="progress-track" min="0" max="0" value="0" step="1">
-    </div>
-
-    <section class="sentence-card reverse-card">
-      <span class="lang-tag" id="promptLangTag">🇪🇸 Español</span>
-      <p id="reversePromptText">—</p>
-
-      <div id="reverseAnswerBlock" class="reverse-answer-block">
-        <span class="lang-tag en" id="answerLangTag">🇬🇧 English</span>
-        <p id="reverseAnswerText">—</p>
-      </div>
-
-      <button id="reverseShowBtn" class="reveal-btn">👁 Mostrar respuesta</button>
-    </section>
-
-    <div class="controls">
-      <button id="reversePrevBtn" class="control-btn" title="Frase anterior">⏮</button>
-      <button id="reversePlayBtn" class="control-btn play" title="Escuchar en inglés">▶</button>
-      <button id="reverseNextBtn" class="control-btn" title="Siguiente frase">⏭</button>
-    </div>
-
-    <p class="tip-box">💡 Tip: intenta decir la frase en voz alta antes de revelar la respuesta.</p>
-  </main>
-
-  <!-- ===================== VISTA: MI VOCABULARIO ===================== -->
-  <main id="vocabView" class="view hidden">
-    <div class="section-banner vocab-theme">
-      <span class="section-banner-icon">🔖</span>
-      <div>
-        <p class="section-banner-title">Mi vocabulario</p>
-        <p class="section-banner-sub">Palabras guardadas durante tu práctica</p>
-      </div>
-      <button id="backFromVocabBtn" class="pill-btn light">← Regresar</button>
-    </div>
-    <section class="card">
-      <div id="vocabList" class="library-list"></div>
-    </section>
-  </main>
-
-  <!-- ===================== POPUP: PIN DE PALABRA ===================== -->
-  <div id="wordPopupOverlay" class="popup-overlay hidden">
-    <div class="popup-card">
-      <p id="wordPopupWord" class="popup-word">—</p>
-      <p id="wordPopupTranslation" class="popup-translation">—</p>
-      <div class="popup-actions">
-        <button id="wordPopupAddBtn" class="primary-btn">+ Agregar a mi vocabulario</button>
-        <button id="wordPopupCloseBtn" class="ghost-btn">Cerrar</button>
-      </div>
+    <div class="speed-slider-row">
+      <span class="speed-icon">🐢</span>
+      <input type="range" id="cardRateRange" min="0.5" max="1.5" step="0.05" value="1">
+      <span class="speed-icon">🐇</span>
     </div>
   </div>
 
-  <script src="app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js').catch(() => { });
-      });
-    }
-  </script>
+  <p class="tip-box">💡 Tip: mantén presionada una palabra para traducirla y guardarla en tu vocabulario.</p>
+</main>
+
+<!-- ===================== VISTA: MODO INVERSO / TRADUCCIÓN ===================== -->
+<main id="reverseView" class="view hidden reverse-theme">
+  <div class="section-banner">
+    <span class="section-banner-icon">⇄</span>
+    <div>
+      <p class="section-banner-title">Práctica de traducción</p>
+      <p class="section-banner-sub" id="reverseDirectionLabel">Español → Inglés</p>
+    </div>
+    <button id="reverseSwapBtn" class="pill-btn light" title="Invertir dirección">⇄ Invertir</button>
+  </div>
+
+  <div class="progress-top">
+    <span id="reverseProgressLabel" class="progress-count">1 / 1</span>
+    <button id="backFromReverseBtn" class="pill-btn">← Regresar</button>
+  </div>
+  <div class="progress-track-wrap">
+    <input type="range" id="reverseProgressSlider" class="progress-track" min="0" max="0" value="0" step="1">
+  </div>
+
+  <section class="sentence-card reverse-card">
+    <span class="lang-tag" id="promptLangTag">🇪🇸 Español</span>
+    <p id="reversePromptText">—</p>
+
+    <div id="reverseAnswerBlock" class="reverse-answer-block">
+      <span class="lang-tag en" id="answerLangTag">🇬🇧 English</span>
+      <p id="reverseAnswerText">—</p>
+    </div>
+
+    <button id="reverseShowBtn" class="reveal-btn">👁 Mostrar respuesta</button>
+  </section>
+
+  <div class="controls">
+    <button id="reversePrevBtn" class="control-btn" title="Frase anterior">⏮</button>
+    <button id="reversePlayBtn" class="control-btn play" title="Escuchar en inglés">▶</button>
+    <button id="reverseNextBtn" class="control-btn" title="Siguiente frase">⏭</button>
+  </div>
+
+  <p class="tip-box">💡 Tip: intenta decir la frase en voz alta antes de revelar la respuesta.</p>
+</main>
+
+<!-- ===================== VISTA: MI VOCABULARIO ===================== -->
+<main id="vocabView" class="view hidden">
+  <div class="section-banner vocab-theme">
+    <span class="section-banner-icon">🔖</span>
+    <div>
+      <p class="section-banner-title">Mi vocabulario</p>
+      <p class="section-banner-sub">Palabras guardadas durante tu práctica</p>
+    </div>
+    <button id="backFromVocabBtn" class="pill-btn light">← Regresar</button>
+  </div>
+  <section class="card">
+    <div id="vocabList" class="library-list"></div>
+  </section>
+</main>
+
+<!-- ===================== POPUP: PIN DE PALABRA ===================== -->
+<div id="wordPopupOverlay" class="popup-overlay hidden">
+  <div class="popup-card">
+    <p id="wordPopupWord" class="popup-word">—</p>
+    <p id="wordPopupTranslation" class="popup-translation">—</p>
+    <div class="popup-actions">
+      <button id="wordPopupAddBtn" class="primary-btn">+ Agregar a mi vocabulario</button>
+      <button id="wordPopupCloseBtn" class="ghost-btn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    });
+  }
+</script>
 </body>
-
 </html>
