@@ -267,8 +267,6 @@ if ('speechSynthesis' in window) {
   window.speechSynthesis.onvoiceschanged = populateVoiceList;
 }
 
-// Al cambiar la voz seleccionada en Ajustes, se reproduce una frase de
-// muestra para que puedas escuchar cómo suena antes de guardar.
 els.voiceSelect.addEventListener('change', () => {
   const voices = window.speechSynthesis.getVoices();
   const chosen = voices.find(v => v.name === els.voiceSelect.value);
@@ -291,7 +289,7 @@ function preprocessAcronymsForSpeech(text) {
 
 const TTS = {
   async speak(text, { force = false } = {}) {
-    if (isMuted && !force) return; // tarjetas silenciadas: no se reproduce nada hasta desmutear
+    if (isMuted && !force) return;
     text = preprocessAcronymsForSpeech(text);
     if (Settings.data.ttsMode === 'external' && Settings.data.externalEndpoint && Settings.data.externalApiKey) {
       try {
@@ -374,9 +372,6 @@ function countWords(text) {
   return trimmed.split(/\s+/).length;
 }
 
-// Comillas/paréntesis de cierre que deben quedarse pegados a la puntuación
-// que los precede (ej. el `"` de cierre de un diálogo), no arrastrarse al
-// inicio del siguiente fragmento.
 const TRAILING_CLOSERS = `"'\u201C\u201D\u2018\u2019\u00BB)\\]`;
 const SENTENCE_REGEX = new RegExp(`[^.,;:!?]+[.,;:!?]+[${TRAILING_CLOSERS}]*`, 'g');
 
@@ -384,7 +379,6 @@ function linesOf(text) {
   return text.split(/\n+/).map(l => l.trim()).filter(Boolean);
 }
 
-/** Divide UNA línea en fragmentos "crudos" (antes de fusionar los cortos), por puntuación. */
 function splitLineRaw(line) {
   const cleaned = line.replace(/\s+/g, ' ').trim();
   const matches = cleaned.match(SENTENCE_REGEX) || [];
@@ -395,11 +389,6 @@ function splitLineRaw(line) {
   return pieces;
 }
 
-/**
- * Decide cómo fusionar fragmentos crudos demasiado cortos con el siguiente,
- * devolviendo grupos de ÍNDICES (no el texto) para poder reaplicar la misma
- * agrupación a otro arreglo de fragmentos (ej. la traducción emparejada).
- */
 function mergeGroups(rawPieces) {
   const groups = [];
   let buffer = [];
@@ -430,7 +419,6 @@ function splitIntoSentences(text) {
   return pieces;
 }
 
-/** Ajusta `arr` para que tenga exactamente `targetLength` elementos, sin perder contenido. */
 function padOrTruncate(arr, targetLength) {
   if (arr.length === targetLength) return arr;
   if (arr.length > targetLength) {
@@ -440,16 +428,6 @@ function padOrTruncate(arr, targetLength) {
   return arr.concat(Array(targetLength - arr.length).fill(''));
 }
 
-/**
- * Construye sentences[] (inglés) y, si hay traducción emparejada, su
- * alineación por índice — validando LÍNEA POR LÍNEA, no el documento
- * completo. Así, un desajuste de puntuación en un párrafo no arruina la
- * alineación de los demás párrafos que sí están bien formados.
- *
- * Importante: cada línea SIEMPRE aporta el mismo número de tarjetas en
- * inglés y en español (aunque esa línea esté desfasada), para que un
- * desajuste en un párrafo no desincronice los párrafos siguientes.
- */
 function buildSentencesWithTranslation(englishText, spanishText) {
   const enLines = linesOf(englishText);
   const esLines = spanishText ? linesOf(spanishText) : null;
@@ -466,19 +444,13 @@ function buildSentencesWithTranslation(englishText, spanishText) {
     if (translations) {
       const esLine = esLines[i];
       if (esLine === undefined) {
-        // No hay línea correspondiente en el doc (ES) para este párrafo.
         groups.forEach(() => translations.push(undefined));
         return;
       }
       const esRaw = splitLineRaw(esLine);
       if (esRaw.length === enRaw.length) {
-        // Esta línea sí está bien formada: se alinea perfecto por índice.
         translations.push(...applyGroups(esRaw, groups));
       } else {
-        // Esta línea está desfasada: se ajusta al mismo número de fragmentos
-        // crudos que el inglés (rellenando o combinando lo que sobre/falte)
-        // para que el desfase quede contenido en ESTA línea únicamente y no
-        // corra la alineación del resto del documento.
         const esRawAdjusted = padOrTruncate(esRaw, enRaw.length);
         translations.push(...applyGroups(esRawAdjusted, groups));
       }
@@ -489,14 +461,14 @@ function buildSentencesWithTranslation(englishText, spanishText) {
 }
 
 /* ============================================================
-   Estado del texto actual (título, origen, traducción emparejada)
+   Estado del texto actual
    ============================================================ */
 
-let currentTitle = null;   // nombre del doc de Drive, o null si fue pegado a mano
-let currentSource = 'pasted'; // 'drive' | 'pasted'
+let currentTitle = null;
+let currentSource = 'pasted';
 let driveFilesCache = [];
 let pairedTranslationSentences = null;
-let pendingTranslationRawText = null; // texto crudo del doc (ES), se alinea al preparar las frases
+let pendingTranslationRawText = null;
 
 function updateWordCount() {
   const n = countWords(els.textInput.value);
@@ -522,7 +494,7 @@ els.textInput.addEventListener('input', () => {
 });
 
 /* ============================================================
-   Biblioteca de práctica (textos recientes, guardados por dispositivo)
+   Biblioteca de práctica
    ============================================================ */
 
 const RecentTexts = {
@@ -614,7 +586,7 @@ function loadEntryAndStart(item, mode) {
 }
 
 /* ============================================================
-   Traducción al español (MyMemory, gratis sin API key)
+   Traducción al español (MyMemory)
    ============================================================ */
 
 const Translator = {
@@ -627,7 +599,7 @@ const Translator = {
   },
   saveCache() {
     try { localStorage.setItem(this.CACHE_KEY, JSON.stringify(this.cache)); }
-    catch (e) { /* si se llena el storage, simplemente no persistimos */ }
+    catch (e) { }
   },
 
   async fetchOnce(text) {
@@ -655,7 +627,6 @@ const Translator = {
       this.saveCache();
       return translated;
     } catch (err) {
-      // Un reintento antes de rendirnos (el servicio gratuito a veces da timeout).
       const translated = await this.fetchOnce(text);
       this.cache[text] = translated;
       this.saveCache();
@@ -665,21 +636,6 @@ const Translator = {
 };
 Translator.loadCache();
 
-/**
- * Traducción al español de sentences[index].
- * Prioridad: el doc emparejado "(ES)" por índice (offline, sin llamadas de red)
- * — aunque no tenga exactamente el mismo número de frases, se usa si existe
- * una frase en esa posición. Solo si no hay nada ahí, se recurre a MyMemory.
- */
-/**
- * Traducción al español de sentences[index], respetando las casillas de Ajustes:
- * - Ambas activas: prioridad al archivo (ES) por índice; si no hay nada ahí, MyMemory.
- * - Solo (ES) activo: solo usa el archivo, por índice, aunque esté desfasado o falte
- *   (nunca recurre a MyMemory) — así se puede detectar un desfase de puntuación.
- * - Solo MyMemory activo: siempre traduce en automático, ignora cualquier archivo (ES).
- * Deja registrado en `lastTranslationSource` de dónde salió ('doc' | 'mymemory'),
- * para que la tarjeta muestre el ícono correspondiente.
- */
 let lastTranslationSource = null;
 
 async function getSpanishFor(index) {
@@ -809,7 +765,7 @@ async function loadDriveDoc(file) {
 let sentences = [];
 let currentIndex = 0;
 let hasActiveSession = false;
-let lastMode = 'shadow'; // 'shadow' | 'reverse'
+let lastMode = 'shadow';
 let starredSet = new Set();
 
 function updateResumeButton() {
@@ -936,7 +892,7 @@ els.progressSlider.addEventListener('input', () => {
 
 function attachWordGestures(span, word) {
   span.addEventListener('click', () => {
-    stopSpeaking(); // corta el audio de la tarjeta que esté sonando de fondo
+    stopSpeaking(); 
     openWordPopup(word);
   });
 }
@@ -1023,10 +979,10 @@ els.prevBtn.addEventListener('click', () => goToPrev(true));
 })();
 
 /* ============================================================
-   Práctica de traducción (modo inverso, con dirección invertible)
+   Práctica de traducción
    ============================================================ */
 
-let reverseDirection = 'es-en'; // 'es-en' | 'en-es'
+let reverseDirection = 'es-en'; 
 let reverseRevealed = false;
 
 function updateReverseLabels() {
@@ -1081,7 +1037,7 @@ function setReverseRevealed(value) {
 els.reverseShowBtn.addEventListener('click', () => setReverseRevealed(!reverseRevealed));
 
 els.reversePlayBtn.addEventListener('click', () => {
-  TTS.speak(sentences[currentIndex]); // siempre se escucha en inglés
+  TTS.speak(sentences[currentIndex]); 
 });
 
 els.reverseProgressSlider.addEventListener('input', () => {
@@ -1113,30 +1069,77 @@ els.reverseBtn.addEventListener('click', () => {
 });
 
 /* ============================================================
+   Diccionario IPA Local
+   ============================================================ */
+
+const ipaDict = {};
+let ipaLoaded = false;
+
+// Descargamos y parseamos el archivo de texto en memoria
+fetch('./en_US.txt')
+  .then(res => {
+    if (!res.ok) throw new Error('No se encontró el archivo en_US.txt local.');
+    return res.text();
+  })
+  .then(text => {
+    text.split('\n').forEach(line => {
+      const parts = line.split('\t');
+      if (parts.length === 2) {
+        // Normalizamos en minúsculas para búsquedas más estables
+        ipaDict[parts[0].toLowerCase().trim()] = parts[1].trim();
+      }
+    });
+    ipaLoaded = true;
+  })
+  .catch(err => console.error('Error al cargar el diccionario IPA local:', err));
+
+/* ============================================================
    Popup de palabra: traducción + pronunciación + vocabulario
    ============================================================ */
 
 let popupCurrentWord = null;
 
 /**
- * Pronunciación en alfabeto fonético (IPA) vía Free Dictionary API (gratis,
- * sin API key). No todas las palabras existen ahí (nombres propios, jerga),
- * en ese caso simplemente no se muestra transcripción.
+ * Busca la pronunciación en el diccionario local cargado en memoria.
+ * Incluye lógica de fallback para encontrar variantes si la palabra
+ * exacta no se encuentra.
  */
 async function fetchPhonetic(word) {
-  try {
-    const clean = word.toLowerCase().replace(/[^a-zà-ÿ'-]/gi, '');
-    if (!clean) return null;
-    const resp = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(clean)}`);
-    if (!resp.ok) return null;
-    const data = await resp.json();
-    const entry = data[0];
-    if (entry.phonetic) return entry.phonetic;
-    const withText = (entry.phonetics || []).find(p => p.text);
-    return withText ? withText.text : null;
-  } catch (err) {
-    return null;
+  if (!ipaLoaded) return '···';
+
+  const clean = word.toLowerCase().replace(/[^a-z'-]/gi, '');
+  if (!clean) return null;
+
+  // 1. Intento directo (la palabra tal cual en el diccionario)
+  if (ipaDict[clean]) return ipaDict[clean];
+
+  // 2. Fallbacks: buscar la raíz quitando sufijos comunes
+  if (clean.endsWith('s')) {
+    const sinS = clean.slice(0, -1);
+    if (ipaDict[sinS]) return ipaDict[sinS];
+    if (clean.endsWith('es') && ipaDict[clean.slice(0, -2)]) return ipaDict[clean.slice(0, -2)];
   }
+  
+  if (clean.endsWith('ing')) {
+    const stem = clean.slice(0, -3);
+    if (ipaDict[stem]) return ipaDict[stem];
+    if (ipaDict[stem + 'e']) return ipaDict[stem + 'e'];
+    if (stem.length > 1 && stem[stem.length - 1] === stem[stem.length - 2]) {
+      if (ipaDict[stem.slice(0, -1)]) return ipaDict[stem.slice(0, -1)];
+    }
+  }
+  
+  if (clean.endsWith('ed')) {
+    const stem = clean.slice(0, -2);
+    if (ipaDict[stem]) return ipaDict[stem];
+    if (ipaDict[stem + 'e']) return ipaDict[stem + 'e'];
+    if (stem.length > 1 && stem[stem.length - 1] === stem[stem.length - 2]) {
+      if (ipaDict[stem.slice(0, -1)]) return ipaDict[stem.slice(0, -1)];
+    }
+  }
+
+  // Si después de todo no se encuentra, retornamos null
+  return null;
 }
 
 let popupSpeaking = false;
@@ -1149,8 +1152,6 @@ function setPopupPlayIcon(playing) {
 async function playPopupWord() {
   if (!popupCurrentWord) return;
   setPopupPlayIcon(true);
-  // El play del popup siempre suena, aunque las tarjetas estén silenciadas:
-  // aquí la intención explícita del usuario es estudiar la pronunciación.
   await TTS.speak(popupCurrentWord, { force: true });
   setPopupPlayIcon(false);
 }
@@ -1163,8 +1164,6 @@ function openWordPopup(word) {
   els.wordPopupOverlay.classList.remove('hidden');
   syncSpeedUI(Settings.data.rate);
 
-  // Se reproduce de inmediato al abrir, sin esperar a que terminen las
-  // llamadas de traducción/fonética (corren en paralelo, no bloquean).
   playPopupWord();
 
   fetchPhonetic(word).then(ph => {
