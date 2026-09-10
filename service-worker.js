@@ -4,7 +4,7 @@
 // seguir practicando sin internet. Cargar textos nuevos de Drive, traducir,
 // o usar una voz "requiere internet" sigue necesitando conexión.
 
-const CACHE_NAME = 'shadowing-shell-v2';
+const CACHE_NAME = 'shadowing-shell-v4';
 const APP_SHELL = [
   './',
   './index.html',

@@ -20,11 +20,15 @@ Los textos ya cargados y el "shell" de la app funcionan sin internet. En Ajustes
 
 ## Primer uso
 
-Ajustes ⚙️ → elige tu voz → Guardar. Pega o carga tu texto → **✨ Practicar Shadowing** o **⇄ Practicar Traducción**.
+Ajustes ⚙️ → elige tu voz (se reproduce una muestra al seleccionarla) → Guardar. Pega o carga tu texto → **✨ Practicar Shadowing** o **⇄ Practicar Traducción**.
 
 ## Shadowing
 
-Escucha (▶/⏸), repite (↻), navega con ⏮/⏭, desliza la tarjeta, o arrastra la barra de progreso. Toca una palabra para escucharla; mantenla presionada para traducirla y guardarla. ☆ marca la frase como difícil.
+- **▶/⏸** reproduce o detiene, **↻** repite, **⏮/⏭** o deslizar la tarjeta cambia de frase, o arrastra la barra de progreso.
+- **Toca una palabra**: se detiene el audio de la tarjeta, se abre su ventana emergente y empieza a sonar la pronunciación de inmediato. Incluye traducción, pronunciación en alfabeto fonético (IPA, si está disponible), botón ▶/⏸ (con sus propios presets de velocidad) y opción de guardarla en tu vocabulario.
+- **☆** marca la frase como difícil.
+- **🔊/🔇** debajo del número de la tarjeta actual silencia las tarjetas (útil si vas saltando de frase en frase sin querer escuchar cada una). El play del popup de palabra siempre suena, aunque estés en silencio — ahí la intención es justo estudiar la pronunciación.
+- Velocidad: 0.4x a 1x (sin opciones más rápidas), en botones fijos — no hay slider.
 
 ## Práctica de traducción (⇄)
 
@@ -38,12 +42,12 @@ Habilita **Google Drive API** en [Google Cloud Console](https://console.cloud.go
 
 Dos fuentes, activables por separado en Ajustes:
 
-- **📄 Archivo gemelo (ES) en Drive** — prioridad. Sube a la misma carpeta un doc con el mismo nombre + `(ES)`, traducido por Gemini.
+- **📄 Archivo gemelo (ES) en Drive** — prioridad. Sube a la misma carpeta un doc con el mismo nombre + `(ES)`, traducido por Gemini, respetando la misma puntuación (comas, puntos, signos de interrogación) del original para que ambos textos se dividan en frases exactamente igual.
 - **🌐 MyMemory** — automática, gratis, respaldo.
 
-Con ambas activas: primero intenta el archivo (ES); si no hay nada en esa frase, usa MyMemory. Con solo (ES) activo: nunca cae a MyMemory — si el archivo no existe o está desfasado, muestra igual lo que haya en esa posición (para detectar el desfase). Junto a la traducción aparece un ícono discreto (Drive o 🌐) según de dónde salió.
+Con ambas activas: primero intenta el archivo (ES); si no hay nada en esa frase, usa MyMemory. Con solo (ES) activo: nunca cae a MyMemory — si el archivo no existe o está desfasado, muestra igual lo que haya en esa posición (para detectar el desfase). Junto a la traducción aparece un ícono discreto y fijo a la izquierda (Drive o 🌐) según de dónde salió.
 
-En Ajustes también puedes **purgar la caché de textos** o **vaciar Mi vocabulario** por separado.
+En Ajustes también puedes **purgar la caché de textos** o **vaciar Mi vocabulario**, por separado.
 
 ## Mi vocabulario (🔖)
 

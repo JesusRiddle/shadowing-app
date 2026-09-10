@@ -79,8 +79,6 @@
           <p class="hint">Pensado para ElevenLabs. Para otro proveedor, ajusta <code>speakExternal</code> en app.js.</p>
         </div>
 
-        <label for="rateRange">Velocidad de reproducción: <span id="rateValue">1.0x</span></label>
-        <input type="range" id="rateRange" min="0.5" max="1.5" step="0.1" value="1">
       </section>
 
       <section>
@@ -194,7 +192,10 @@
   <p id="progressPercent" class="progress-percent">0% completado</p>
 
   <section class="sentence-card" id="sentenceCard">
-    <span id="indexBadge" class="index-badge">1</span>
+    <div class="card-badge-row">
+      <span id="indexBadge" class="index-badge">1</span>
+      <button id="muteBtn" class="mute-btn" title="Silenciar tarjetas">🔊</button>
+    </div>
     <button id="starBtn" class="star-btn" title="Marcar frase como difícil">☆</button>
     <p id="sentenceDisplay">—</p>
     <div class="card-divider" id="cardDivider"></div>
@@ -214,19 +215,15 @@
   <div class="speed-block">
     <p class="speed-label">Velocidad de reproducción</p>
     <div class="speed-presets" id="speedPresets">
+      <button data-rate="0.4">0.4x</button>
+      <button data-rate="0.5">0.5x</button>
+      <button data-rate="0.6">0.6x</button>
       <button data-rate="0.75">0.75x</button>
       <button data-rate="1">1x</button>
-      <button data-rate="1.25">1.25x</button>
-      <button data-rate="1.5">1.5x</button>
-    </div>
-    <div class="speed-slider-row">
-      <span class="speed-icon">🐢</span>
-      <input type="range" id="cardRateRange" min="0.5" max="1.5" step="0.05" value="1">
-      <span class="speed-icon">🐇</span>
     </div>
   </div>
 
-  <p class="tip-box">💡 Tip: mantén presionada una palabra para traducirla y guardarla en tu vocabulario.</p>
+  <p class="tip-box">💡 Tip: presiona una palabra para ver su traducción, pronunciación y guardarla en tu vocabulario.</p>
 </main>
 
 <!-- ===================== VISTA: MODO INVERSO / TRADUCCIÓN ===================== -->
@@ -284,11 +281,26 @@
   </section>
 </main>
 
-<!-- ===================== POPUP: PIN DE PALABRA ===================== -->
+<!-- ===================== POPUP: PALABRA (traducción + pronunciación) ===================== -->
 <div id="wordPopupOverlay" class="popup-overlay hidden">
   <div class="popup-card">
     <p id="wordPopupWord" class="popup-word">—</p>
+    <p id="wordPopupPhonetic" class="popup-phonetic">—</p>
+
+    <button id="wordPopupPlayBtn" class="popup-play-btn" title="Escuchar pronunciación">▶</button>
+
+    <div class="speed-presets popup-speed-presets" id="popupSpeedPresets">
+      <button data-rate="0.4">0.4x</button>
+      <button data-rate="0.5">0.5x</button>
+      <button data-rate="0.6">0.6x</button>
+      <button data-rate="0.75">0.75x</button>
+      <button data-rate="1">1x</button>
+    </div>
+
+    <div class="popup-divider"></div>
+
     <p id="wordPopupTranslation" class="popup-translation">—</p>
+
     <div class="popup-actions">
       <button id="wordPopupAddBtn" class="primary-btn">+ Agregar a mi vocabulario</button>
       <button id="wordPopupCloseBtn" class="ghost-btn">Cerrar</button>

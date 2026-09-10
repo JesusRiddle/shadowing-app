@@ -16,8 +16,6 @@ const els = {
   voiceSelect: document.getElementById('voiceSelect'),
   externalEndpoint: document.getElementById('externalEndpoint'),
   externalApiKey: document.getElementById('externalApiKey'),
-  rateRange: document.getElementById('rateRange'),
-  rateValue: document.getElementById('rateValue'),
 
   themeModeRadios: document.querySelectorAll('input[name="themeMode"]'),
 
@@ -60,7 +58,7 @@ const els = {
   translationSourceIcon: document.getElementById('translationSourceIcon'),
   translationDisplay: document.getElementById('translationDisplay'),
   speedPresets: document.getElementById('speedPresets'),
-  cardRateRange: document.getElementById('cardRateRange'),
+  muteBtn: document.getElementById('muteBtn'),
   prevBtn: document.getElementById('prevBtn'),
   playBtn: document.getElementById('playBtn'),
   repeatBtn: document.getElementById('repeatBtn'),
@@ -86,6 +84,9 @@ const els = {
 
   wordPopupOverlay: document.getElementById('wordPopupOverlay'),
   wordPopupWord: document.getElementById('wordPopupWord'),
+  wordPopupPhonetic: document.getElementById('wordPopupPhonetic'),
+  wordPopupPlayBtn: document.getElementById('wordPopupPlayBtn'),
+  popupSpeedPresets: document.getElementById('popupSpeedPresets'),
   wordPopupTranslation: document.getElementById('wordPopupTranslation'),
   wordPopupAddBtn: document.getElementById('wordPopupAddBtn'),
   wordPopupCloseBtn: document.getElementById('wordPopupCloseBtn'),
@@ -109,6 +110,7 @@ const Settings = {
     translateSourceMyMemory: true,
     translateApiKey: '',
     theme: 'system',
+    muted: false,
   },
   load() {
     const raw = localStorage.getItem(this.KEY);
@@ -127,8 +129,6 @@ function applySettingsToUI() {
   toggleTtsModeUI(Settings.data.ttsMode);
   els.externalEndpoint.value = Settings.data.externalEndpoint || '';
   els.externalApiKey.value = Settings.data.externalApiKey || '';
-  els.rateRange.value = Settings.data.rate;
-  els.rateValue.textContent = `${Settings.data.rate}x`;
   els.driveApiKey.value = Settings.data.driveApiKey || '';
   els.driveFolderId.value = Settings.data.driveFolderId || '';
   els.translateSourceDoc.checked = !!Settings.data.translateSourceDoc;
@@ -137,6 +137,7 @@ function applySettingsToUI() {
   document.querySelector(`input[name="themeMode"][value="${Settings.data.theme}"]`).checked = true;
   applyTheme();
   syncSpeedUI(Settings.data.rate);
+  setMuted(!!Settings.data.muted);
 }
 
 function toggleTtsModeUI(mode) {
@@ -148,9 +149,20 @@ els.ttsModeRadios.forEach(radio => {
   radio.addEventListener('change', (e) => toggleTtsModeUI(e.target.value));
 });
 
-els.rateRange.addEventListener('input', () => {
-  els.rateValue.textContent = `${els.rateRange.value}x`;
-});
+/* ---------- Silenciar tarjetas ---------- */
+
+let isMuted = false;
+
+function setMuted(value) {
+  isMuted = value;
+  Settings.data.muted = value;
+  Settings.save();
+  els.muteBtn.textContent = value ? '🔇' : '🔊';
+  els.muteBtn.title = value ? 'Activar sonido' : 'Silenciar tarjetas';
+  els.muteBtn.classList.toggle('muted', value);
+}
+
+els.muteBtn.addEventListener('click', () => setMuted(!isMuted));
 
 /* ---------- Overlay de ajustes ---------- */
 
@@ -171,7 +183,6 @@ els.saveSettingsBtn.addEventListener('click', () => {
   Settings.data.voiceName = els.voiceSelect.value || null;
   Settings.data.externalEndpoint = els.externalEndpoint.value.trim();
   Settings.data.externalApiKey = els.externalApiKey.value.trim();
-  Settings.data.rate = parseFloat(els.rateRange.value);
   Settings.data.driveApiKey = els.driveApiKey.value.trim();
   Settings.data.driveFolderId = els.driveFolderId.value.trim();
   Settings.data.translateSourceDoc = els.translateSourceDoc.checked;
@@ -256,6 +267,20 @@ if ('speechSynthesis' in window) {
   window.speechSynthesis.onvoiceschanged = populateVoiceList;
 }
 
+// Al cambiar la voz seleccionada en Ajustes, se reproduce una frase de
+// muestra para que puedas escuchar cómo suena antes de guardar.
+els.voiceSelect.addEventListener('change', () => {
+  const voices = window.speechSynthesis.getVoices();
+  const chosen = voices.find(v => v.name === els.voiceSelect.value);
+  if (!chosen) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance('Hello! This is how I sound.');
+  utter.voice = chosen;
+  utter.lang = chosen.lang || 'en-US';
+  utter.rate = Settings.data.rate || 1;
+  window.speechSynthesis.speak(utter);
+});
+
 /* ============================================================
    Proveedor de TTS
    ============================================================ */
@@ -265,7 +290,8 @@ function preprocessAcronymsForSpeech(text) {
 }
 
 const TTS = {
-  async speak(text) {
+  async speak(text, { force = false } = {}) {
+    if (isMuted && !force) return; // tarjetas silenciadas: no se reproduce nada hasta desmutear
     text = preprocessAcronymsForSpeech(text);
     if (Settings.data.ttsMode === 'external' && Settings.data.externalEndpoint && Settings.data.externalApiKey) {
       try {
@@ -317,16 +343,11 @@ const TTS = {
 };
 
 /* ============================================================
-   Velocidad: presets + slider de la tarjeta
+   Velocidad: presets (tarjeta + popup de palabra, sincronizados)
    ============================================================ */
 
 function syncSpeedUI(rate) {
-  els.cardRateRange.value = rate;
-  els.rateRange.value = rate;
-  els.rateValue.textContent = `${rate}x`;
-  const pct = ((parseFloat(rate) - 0.5) / (1.5 - 0.5)) * 100;
-  els.cardRateRange.style.setProperty('--fill', `${pct}%`);
-  els.speedPresets.querySelectorAll('button').forEach(btn => {
+  document.querySelectorAll('.speed-presets button').forEach(btn => {
     btn.classList.toggle('active', parseFloat(btn.dataset.rate) === parseFloat(rate));
   });
 }
@@ -337,11 +358,9 @@ function setRate(rate) {
   syncSpeedUI(Settings.data.rate);
 }
 
-els.speedPresets.querySelectorAll('button').forEach(btn => {
+document.querySelectorAll('.speed-presets button').forEach(btn => {
   btn.addEventListener('click', () => setRate(btn.dataset.rate));
 });
-
-els.cardRateRange.addEventListener('input', () => setRate(els.cardRateRange.value));
 
 /* ============================================================
    Segmentación de texto en frases cortas
@@ -355,35 +374,118 @@ function countWords(text) {
   return trimmed.split(/\s+/).length;
 }
 
-function splitIntoSentences(text) {
-  // Primero por líneas: así un título sin punto final (ej. un encabezado)
-  // no se pega con el párrafo siguiente solo por no tener puntuación.
-  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
-  if (lines.length === 0) return [];
+// Comillas/paréntesis de cierre que deben quedarse pegados a la puntuación
+// que los precede (ej. el `"` de cierre de un diálogo), no arrastrarse al
+// inicio del siguiente fragmento.
+const TRAILING_CLOSERS = `"'\u201C\u201D\u2018\u2019\u00BB)\\]`;
+const SENTENCE_REGEX = new RegExp(`[^.,;:!?]+[.,;:!?]+[${TRAILING_CLOSERS}]*`, 'g');
 
-  const rawPieces = [];
-  lines.forEach(line => {
-    const cleaned = line.replace(/\s+/g, ' ').trim();
-    const matches = cleaned.match(/[^.,;:!?]+[.,;:!?]+/g) || [];
-    matches.forEach(m => rawPieces.push(m.trim()));
+function linesOf(text) {
+  return text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+}
 
-    const joined = matches.join('');
-    const remainder = cleaned.slice(joined.length).trim();
-    if (remainder) rawPieces.push(remainder);
-  });
+/** Divide UNA línea en fragmentos "crudos" (antes de fusionar los cortos), por puntuación. */
+function splitLineRaw(line) {
+  const cleaned = line.replace(/\s+/g, ' ').trim();
+  const matches = cleaned.match(SENTENCE_REGEX) || [];
+  const pieces = matches.map(m => m.trim());
+  const joined = matches.join('');
+  const remainder = cleaned.slice(joined.length).trim();
+  if (remainder) pieces.push(remainder);
+  return pieces;
+}
 
-  const pieces = [];
-  let buffer = '';
+/**
+ * Decide cómo fusionar fragmentos crudos demasiado cortos con el siguiente,
+ * devolviendo grupos de ÍNDICES (no el texto) para poder reaplicar la misma
+ * agrupación a otro arreglo de fragmentos (ej. la traducción emparejada).
+ */
+function mergeGroups(rawPieces) {
+  const groups = [];
+  let buffer = [];
+  let bufferWords = 0;
   rawPieces.forEach((piece, idx) => {
-    buffer = buffer ? `${buffer} ${piece}` : piece;
+    buffer.push(idx);
+    bufferWords += countWords(piece);
     const isLast = idx === rawPieces.length - 1;
-    if (countWords(buffer) >= MIN_WORDS_PER_CARD || isLast) {
-      pieces.push(buffer);
-      buffer = '';
+    if (bufferWords >= MIN_WORDS_PER_CARD || isLast) {
+      groups.push(buffer);
+      buffer = [];
+      bufferWords = 0;
+    }
+  });
+  return groups;
+}
+
+function applyGroups(rawPieces, groups) {
+  return groups.map(g => g.map(i => rawPieces[i]).join(' '));
+}
+
+function splitIntoSentences(text) {
+  const pieces = [];
+  linesOf(text).forEach(line => {
+    const raw = splitLineRaw(line);
+    if (raw.length) pieces.push(...applyGroups(raw, mergeGroups(raw)));
+  });
+  return pieces;
+}
+
+/** Ajusta `arr` para que tenga exactamente `targetLength` elementos, sin perder contenido. */
+function padOrTruncate(arr, targetLength) {
+  if (arr.length === targetLength) return arr;
+  if (arr.length > targetLength) {
+    if (targetLength === 0) return [];
+    return arr.slice(0, targetLength - 1).concat([arr.slice(targetLength - 1).join(' ')]);
+  }
+  return arr.concat(Array(targetLength - arr.length).fill(''));
+}
+
+/**
+ * Construye sentences[] (inglés) y, si hay traducción emparejada, su
+ * alineación por índice — validando LÍNEA POR LÍNEA, no el documento
+ * completo. Así, un desajuste de puntuación en un párrafo no arruina la
+ * alineación de los demás párrafos que sí están bien formados.
+ *
+ * Importante: cada línea SIEMPRE aporta el mismo número de tarjetas en
+ * inglés y en español (aunque esa línea esté desfasada), para que un
+ * desajuste en un párrafo no desincronice los párrafos siguientes.
+ */
+function buildSentencesWithTranslation(englishText, spanishText) {
+  const enLines = linesOf(englishText);
+  const esLines = spanishText ? linesOf(spanishText) : null;
+
+  const sentences = [];
+  const translations = esLines ? [] : null;
+
+  enLines.forEach((enLine, i) => {
+    const enRaw = splitLineRaw(enLine);
+    if (enRaw.length === 0) return;
+    const groups = mergeGroups(enRaw);
+    sentences.push(...applyGroups(enRaw, groups));
+
+    if (translations) {
+      const esLine = esLines[i];
+      if (esLine === undefined) {
+        // No hay línea correspondiente en el doc (ES) para este párrafo.
+        groups.forEach(() => translations.push(undefined));
+        return;
+      }
+      const esRaw = splitLineRaw(esLine);
+      if (esRaw.length === enRaw.length) {
+        // Esta línea sí está bien formada: se alinea perfecto por índice.
+        translations.push(...applyGroups(esRaw, groups));
+      } else {
+        // Esta línea está desfasada: se ajusta al mismo número de fragmentos
+        // crudos que el inglés (rellenando o combinando lo que sobre/falte)
+        // para que el desfase quede contenido en ESTA línea únicamente y no
+        // corra la alineación del resto del documento.
+        const esRawAdjusted = padOrTruncate(esRaw, enRaw.length);
+        translations.push(...applyGroups(esRawAdjusted, groups));
+      }
     }
   });
 
-  return pieces;
+  return { sentences, translations };
 }
 
 /* ============================================================
@@ -394,6 +496,7 @@ let currentTitle = null;   // nombre del doc de Drive, o null si fue pegado a ma
 let currentSource = 'pasted'; // 'drive' | 'pasted'
 let driveFilesCache = [];
 let pairedTranslationSentences = null;
+let pendingTranslationRawText = null; // texto crudo del doc (ES), se alinea al preparar las frases
 
 function updateWordCount() {
   const n = countWords(els.textInput.value);
@@ -413,6 +516,7 @@ function setLoadedTitle(title) {
 els.textInput.addEventListener('input', () => {
   updateWordCount();
   pairedTranslationSentences = null;
+  pendingTranslationRawText = null;
   currentSource = 'pasted';
   setLoadedTitle(null);
 });
@@ -678,6 +782,7 @@ async function exportDocText(fileId) {
 async function loadDriveDoc(file) {
   els.driveFileList.innerHTML = '<p class="hint">Cargando texto...</p>';
   pairedTranslationSentences = null;
+  pendingTranslationRawText = null;
   try {
     const text = await exportDocText(file.id);
     els.textInput.value = text;
@@ -688,8 +793,7 @@ async function loadDriveDoc(file) {
     const pairedName = `${file.name.trim()} (ES)`.toLowerCase();
     const pairedFile = driveFilesCache.find(f => f.name.trim().toLowerCase() === pairedName);
     if (pairedFile) {
-      const translationText = await exportDocText(pairedFile.id);
-      pairedTranslationSentences = { raw: translationText, sentences: splitIntoSentences(translationText) };
+      pendingTranslationRawText = await exportDocText(pairedFile.id);
     }
 
     els.driveFileList.classList.add('hidden');
@@ -718,11 +822,14 @@ function prepareSentences() {
     alert('Pega o carga un texto primero.');
     return false;
   }
-  sentences = splitIntoSentences(text);
-  if (sentences.length === 0) {
+
+  const built = buildSentencesWithTranslation(text, pendingTranslationRawText);
+  if (built.sentences.length === 0) {
     alert('No se pudo dividir el texto en frases.');
     return false;
   }
+  sentences = built.sentences;
+  pairedTranslationSentences = built.translations ? { sentences: built.translations } : null;
 
   const title = currentSource === 'drive' && currentTitle
     ? currentTitle
@@ -812,7 +919,7 @@ function renderSentence() {
     const span = document.createElement('span');
     span.className = 'word';
     span.textContent = chunk;
-    span.title = 'Toca para escuchar · mantén presionado para traducir y guardar';
+    span.title = 'Toca para ver traducción, pronunciación y guardar en tu vocabulario';
     attachWordGestures(span, chunk.replace(/[.,;:!?]+$/, ''));
     els.sentenceDisplay.appendChild(span);
   });
@@ -827,32 +934,11 @@ els.progressSlider.addEventListener('input', () => {
   renderSentence();
 });
 
-const LONG_PRESS_MS = 500;
-
 function attachWordGestures(span, word) {
-  let pressTimer = null;
-  let longPressFired = false;
-
-  const start = () => {
-    longPressFired = false;
-    pressTimer = setTimeout(() => {
-      longPressFired = true;
-      openWordPopup(word);
-    }, LONG_PRESS_MS);
-  };
-  const cancelPress = () => clearTimeout(pressTimer);
-  const end = () => {
-    clearTimeout(pressTimer);
-    if (longPressFired) return;
-    TTS.speak(word);
-  };
-
-  span.addEventListener('mousedown', start);
-  span.addEventListener('mouseup', end);
-  span.addEventListener('mouseleave', cancelPress);
-  span.addEventListener('touchstart', (e) => { e.preventDefault(); start(); }, { passive: false });
-  span.addEventListener('touchend', (e) => { e.preventDefault(); end(); });
-  span.addEventListener('touchcancel', cancelPress);
+  span.addEventListener('click', () => {
+    stopSpeaking(); // corta el audio de la tarjeta que esté sonando de fondo
+    openWordPopup(word);
+  });
 }
 
 els.starBtn.addEventListener('click', () => {
@@ -1027,30 +1113,90 @@ els.reverseBtn.addEventListener('click', () => {
 });
 
 /* ============================================================
-   Popup de palabra: traducción + agregar a vocabulario
+   Popup de palabra: traducción + pronunciación + vocabulario
    ============================================================ */
 
 let popupCurrentWord = null;
 
-async function openWordPopup(word) {
-  popupCurrentWord = word;
-  els.wordPopupWord.textContent = word;
-  els.wordPopupTranslation.textContent = 'Traduciendo...';
-  els.wordPopupOverlay.classList.remove('hidden');
+/**
+ * Pronunciación en alfabeto fonético (IPA) vía Free Dictionary API (gratis,
+ * sin API key). No todas las palabras existen ahí (nombres propios, jerga),
+ * en ese caso simplemente no se muestra transcripción.
+ */
+async function fetchPhonetic(word) {
   try {
-    els.wordPopupTranslation.textContent = await Translator.translate(word);
+    const clean = word.toLowerCase().replace(/[^a-zà-ÿ'-]/gi, '');
+    if (!clean) return null;
+    const resp = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(clean)}`);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const entry = data[0];
+    if (entry.phonetic) return entry.phonetic;
+    const withText = (entry.phonetics || []).find(p => p.text);
+    return withText ? withText.text : null;
   } catch (err) {
-    els.wordPopupTranslation.textContent = '(no se pudo traducir)';
+    return null;
   }
 }
+
+let popupSpeaking = false;
+
+function setPopupPlayIcon(playing) {
+  popupSpeaking = playing;
+  els.wordPopupPlayBtn.textContent = playing ? '⏸' : '▶';
+}
+
+async function playPopupWord() {
+  if (!popupCurrentWord) return;
+  setPopupPlayIcon(true);
+  // El play del popup siempre suena, aunque las tarjetas estén silenciadas:
+  // aquí la intención explícita del usuario es estudiar la pronunciación.
+  await TTS.speak(popupCurrentWord, { force: true });
+  setPopupPlayIcon(false);
+}
+
+function openWordPopup(word) {
+  popupCurrentWord = word;
+  els.wordPopupWord.textContent = word;
+  els.wordPopupPhonetic.textContent = '···';
+  els.wordPopupTranslation.textContent = 'Traduciendo...';
+  els.wordPopupOverlay.classList.remove('hidden');
+  syncSpeedUI(Settings.data.rate);
+
+  // Se reproduce de inmediato al abrir, sin esperar a que terminen las
+  // llamadas de traducción/fonética (corren en paralelo, no bloquean).
+  playPopupWord();
+
+  fetchPhonetic(word).then(ph => {
+    els.wordPopupPhonetic.textContent = ph || '(pronunciación no disponible)';
+  });
+
+  Translator.translate(word)
+    .then(text => { els.wordPopupTranslation.textContent = text; })
+    .catch(() => { els.wordPopupTranslation.textContent = '(no se pudo traducir)'; });
+}
+
 function closeWordPopup() {
+  window.speechSynthesis.cancel();
+  setPopupPlayIcon(false);
   els.wordPopupOverlay.classList.add('hidden');
   popupCurrentWord = null;
 }
+
 els.wordPopupCloseBtn.addEventListener('click', closeWordPopup);
 els.wordPopupOverlay.addEventListener('click', (e) => {
   if (e.target === els.wordPopupOverlay) closeWordPopup();
 });
+
+els.wordPopupPlayBtn.addEventListener('click', () => {
+  if (popupSpeaking) {
+    window.speechSynthesis.cancel();
+    setPopupPlayIcon(false);
+  } else {
+    playPopupWord();
+  }
+});
+
 els.wordPopupAddBtn.addEventListener('click', () => {
   if (!popupCurrentWord) return;
   VocabList.add(popupCurrentWord, els.wordPopupTranslation.textContent);
