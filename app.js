@@ -263,8 +263,23 @@ function populateVoiceList() {
 }
 
 if ('speechSynthesis' in window) {
+  // Intento estándar para Chrome y navegadores estables
   populateVoiceList();
   window.speechSynthesis.onvoiceschanged = populateVoiceList;
+  
+  // Parche para Edge móvil: Forzar la búsqueda si falla el evento
+  let attempts = 0;
+  const pollVoices = setInterval(() => {
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      populateVoiceList();
+      clearInterval(pollVoices);
+    }
+    
+    // Detener después de 2 segundos para no ciclar la app indefinidamente
+    attempts++;
+    if (attempts > 10) clearInterval(pollVoices);
+  }, 200);
 }
 
 els.voiceSelect.addEventListener('change', () => {
