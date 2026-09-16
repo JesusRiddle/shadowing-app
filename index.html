@@ -28,8 +28,9 @@
           <rect x="9" y="9" width="12" height="12" rx="3" fill="currentColor" />
         </svg>
       </span>
-      <div>
-        <h1>Shadowing<br><span>English</span></h1>
+      <div class="brand-copy">
+        <h1>Shadowing</h1>
+        <span>English</span>
       </div>
     </div>
     <div class="header-actions">
@@ -50,9 +51,9 @@
           <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          <circle cx="9" cy="6" r="2.2" fill="var(--card-bg)" stroke="currentColor" stroke-width="2" />
-          <circle cx="16" cy="12" r="2.2" fill="var(--card-bg)" stroke="currentColor" stroke-width="2" />
-          <circle cx="10" cy="18" r="2.2" fill="var(--card-bg)" stroke="currentColor" stroke-width="2" />
+          <circle cx="9" cy="6" r="2.2" fill="var(--hero-card)" stroke="currentColor" stroke-width="2" />
+          <circle cx="16" cy="12" r="2.2" fill="var(--hero-card)" stroke="currentColor" stroke-width="2" />
+          <circle cx="10" cy="18" r="2.2" fill="var(--hero-card)" stroke="currentColor" stroke-width="2" />
         </svg>
       </button>
     </div>
@@ -144,6 +145,7 @@
   <main id="loadView" class="view">
     <div class="hero">
       <div class="hero-text">
+        <p class="hero-kicker">LISTEN • REPEAT • IMPROVE</p>
         <h2 class="hero-title">Let's start<br><span>practicing.</span></h2>
         <p class="hero-sub">Importa un texto o pega el tuyo para convertirlo en frases y empezar a practicar.</p>
       </div>
@@ -167,7 +169,7 @@
           <!-- Tarjeta de documento con sombra sutil -->
           <g transform="translate(45, 32) rotate(8)" filter="url(#cardShadow)">
             <!-- Fondo de la tarjeta -->
-            <rect x="0" y="0" width="100" height="115" rx="14" fill="var(--card-bg)" stroke="var(--primary)"
+            <rect x="0" y="0" width="100" height="115" rx="14" fill="var(--hero-card)" stroke="var(--primary)"
               stroke-width="1.5" stroke-opacity="0.15" />
 
             <!-- Comillas decorativas en la esquina superior derecha -->
@@ -176,10 +178,10 @@
 
             <!-- Líneas simulando texto del documento -->
             <rect x="16" y="24" width="48" height="6" rx="3" fill="var(--primary)" opacity="0.35" />
-            <rect x="16" y="44" width="68" height="5" rx="2.5" fill="var(--border)" />
-            <rect x="16" y="58" width="58" height="5" rx="2.5" fill="var(--border)" />
-            <rect x="16" y="72" width="64" height="5" rx="2.5" fill="var(--border)" />
-            <rect x="16" y="86" width="40" height="5" rx="2.5" fill="var(--border)" />
+            <rect x="16" y="44" width="68" height="5" rx="2.5" fill="var(--hero-lines)" />
+            <rect x="16" y="58" width="58" height="5" rx="2.5" fill="var(--hero-lines)" />
+            <rect x="16" y="72" width="64" height="5" rx="2.5" fill="var(--hero-lines)" />
+            <rect x="16" y="86" width="40" height="5" rx="2.5" fill="var(--hero-lines)" />
           </g>
         </svg>
       </div>
