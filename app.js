@@ -23,7 +23,6 @@ const els = {
   translateSourceMyMemory: document.getElementById('translateSourceMyMemory'),
   translateApiKey: document.getElementById('translateApiKey'),
 
-  purgeLibraryBtn: document.getElementById('purgeLibraryBtn'),
   purgeVocabBtn: document.getElementById('purgeVocabBtn'),
 
   driveApiKey: document.getElementById('driveApiKey'),
@@ -44,7 +43,6 @@ const els = {
   startShadowBtn: document.getElementById('startShadowBtn'),
   startTranslateBtn: document.getElementById('startTranslateBtn'),
   resumeBtn: document.getElementById('resumeBtn'),
-  recentList: document.getElementById('recentList'),
 
   progressLabel: document.getElementById('progressLabel'),
   progressSlider: document.getElementById('progressSlider'),
@@ -61,7 +59,6 @@ const els = {
   muteBtn: document.getElementById('muteBtn'),
   prevBtn: document.getElementById('prevBtn'),
   playBtn: document.getElementById('playBtn'),
-  repeatBtn: document.getElementById('repeatBtn'),
   nextBtn: document.getElementById('nextBtn'),
 
   reverseSwapBtn: document.getElementById('reverseSwapBtn'),
@@ -90,6 +87,7 @@ const els = {
   wordPopupTranslation: document.getElementById('wordPopupTranslation'),
   wordPopupAddBtn: document.getElementById('wordPopupAddBtn'),
   wordPopupCloseBtn: document.getElementById('wordPopupCloseBtn'),
+  wordPopupLoopBtn: document.getElementById('wordPopupLoopBtn'),
 };
 
 /* ============================================================
@@ -196,12 +194,6 @@ els.saveSettingsBtn.addEventListener('click', () => {
   closeSettings();
 });
 
-els.purgeLibraryBtn.addEventListener('click', () => {
-  if (!confirm('¿Borrar todos los textos guardados en "Tu biblioteca de práctica" de este dispositivo? Esto no afecta tus documentos de Drive, solo lo cargado en caché local.')) return;
-  localStorage.removeItem(RecentTexts.KEY);
-  renderRecentList();
-});
-
 els.purgeVocabBtn.addEventListener('click', () => {
   if (!confirm('¿Vaciar por completo "Mi vocabulario"? Esta acción no se puede deshacer.')) return;
   localStorage.removeItem(VocabList.KEY);
@@ -263,11 +255,9 @@ function populateVoiceList() {
 }
 
 if ('speechSynthesis' in window) {
-  // Intento estándar para Chrome y navegadores estables
   populateVoiceList();
   window.speechSynthesis.onvoiceschanged = populateVoiceList;
   
-  // Parche para Edge móvil: Forzar la búsqueda si falla el evento
   let attempts = 0;
   const pollVoices = setInterval(() => {
     const voices = window.speechSynthesis.getVoices();
@@ -276,7 +266,6 @@ if ('speechSynthesis' in window) {
       clearInterval(pollVoices);
     }
     
-    // Detener después de 2 segundos para no ciclar la app indefinidamente
     attempts++;
     if (attempts > 10) clearInterval(pollVoices);
   }, 200);
@@ -509,98 +498,6 @@ els.textInput.addEventListener('input', () => {
 });
 
 /* ============================================================
-   Biblioteca de práctica
-   ============================================================ */
-
-const RecentTexts = {
-  KEY: 'shadowing_recent_texts_v1',
-  MAX: 12,
-  list() {
-    try { return JSON.parse(localStorage.getItem(this.KEY)) || []; }
-    catch (e) { return []; }
-  },
-  save(entry) {
-    let items = this.list().filter(i => i.title !== entry.title || i.source !== entry.source);
-    items.unshift(entry);
-    items = items.slice(0, this.MAX);
-    localStorage.setItem(this.KEY, JSON.stringify(items));
-    renderRecentList();
-  },
-};
-
-function relativeDays(ts) {
-  const days = Math.floor((Date.now() - ts) / (1000 * 60 * 60 * 24));
-  if (days <= 0) return 'Practicado hoy';
-  if (days === 1) return 'Practicado ayer';
-  return `Practicado hace ${days} días`;
-}
-
-function renderRecentList() {
-  const items = RecentTexts.list();
-  els.recentList.innerHTML = '';
-  if (items.length === 0) {
-    els.recentList.innerHTML = '<p class="hint">Todavía no hay textos guardados en este dispositivo.</p>';
-    return;
-  }
-  items.forEach(item => {
-    const row = document.createElement('div');
-    row.className = 'lib-item';
-
-    const icon = document.createElement('div');
-    icon.className = 'lib-icon';
-    icon.textContent = '📄';
-
-    const info = document.createElement('div');
-    info.className = 'lib-info';
-    const title = document.createElement('p');
-    title.className = 'lib-title';
-    title.textContent = item.title;
-    const sub = document.createElement('p');
-    sub.className = 'lib-sub';
-    sub.textContent = `${item.wordCount} palabras · ${item.phraseCount} frases`;
-    info.appendChild(title);
-    info.appendChild(sub);
-
-    const meta = document.createElement('div');
-    meta.className = 'lib-meta';
-    meta.textContent = relativeDays(item.savedAt);
-
-    const playBtn = document.createElement('button');
-    playBtn.className = 'lib-play';
-    playBtn.textContent = '▶';
-    playBtn.title = 'Practicar shadowing';
-    playBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      loadEntryAndStart(item, 'shadow');
-    });
-
-    row.appendChild(icon);
-    row.appendChild(info);
-    row.appendChild(meta);
-    row.appendChild(playBtn);
-
-    row.addEventListener('click', () => {
-      els.textInput.value = item.text;
-      updateWordCount();
-      currentSource = item.source;
-      pairedTranslationSentences = null;
-      setLoadedTitle(item.source === 'drive' ? item.title : null);
-    });
-
-    els.recentList.appendChild(row);
-  });
-}
-
-function loadEntryAndStart(item, mode) {
-  els.textInput.value = item.text;
-  updateWordCount();
-  currentSource = item.source;
-  pairedTranslationSentences = null;
-  setLoadedTitle(item.source === 'drive' ? item.title : null);
-  if (mode === 'shadow') beginShadowing(); else beginTranslationPractice();
-}
-
-/* ============================================================
    Traducción al español (MyMemory)
    ============================================================ */
 
@@ -707,6 +604,12 @@ async function showTranslationFor(index) {
    Google Drive
    ============================================================ */
 
+async function exportDocText(fileId) {
+  const url = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain&key=${Settings.data.driveApiKey}`;
+  const resp = await fetch(url);
+  return await resp.text();
+}
+
 els.loadDriveBtn.addEventListener('click', async () => {
   if (!Settings.data.driveApiKey || !Settings.data.driveFolderId) {
     alert('Primero configura tu API key de Google y el ID de la carpeta en Ajustes ⚙️');
@@ -715,7 +618,7 @@ els.loadDriveBtn.addEventListener('click', async () => {
   }
 
   els.driveFileList.classList.remove('hidden');
-  els.driveFileList.innerHTML = '<p class="hint">Cargando archivos de Drive...</p>';
+  els.driveFileList.innerHTML = '<p class="hint">Cargando archivos y analizando frases...</p>';
 
   try {
     const url = `https://www.googleapis.com/drive/v3/files?q='${Settings.data.driveFolderId}'+in+parents+and+mimeType='application/vnd.google-apps.document'&fields=files(id,name)&key=${Settings.data.driveApiKey}`;
@@ -730,51 +633,87 @@ els.loadDriveBtn.addEventListener('click', async () => {
       return;
     }
 
-    driveFilesCache
-      .filter(file => !/\(ES\)\s*$/i.test(file.name.trim()))
-      .forEach(file => {
-        const div = document.createElement('div');
-        div.className = 'file-item';
-        div.innerHTML = `<span>📄 ${file.name}</span>`;
-        div.addEventListener('click', () => loadDriveDoc(file));
-        els.driveFileList.appendChild(div);
+    const mainFiles = driveFilesCache.filter(file => !/\(ES\)\s*$/i.test(file.name.trim()));
+
+    for (const file of mainFiles) {
+      const row = document.createElement('div');
+      row.className = 'lib-item';
+      row.innerHTML = `<div class="lib-icon">📄</div><div class="lib-info"><p class="lib-title">${file.name}</p><p class="lib-sub">Cargando detalles...</p></div>`;
+      els.driveFileList.appendChild(row);
+
+      exportDocText(file.id).then(text => {
+        const wordCount = countWords(text);
+        const pairedName = `${file.name.trim()} (ES)`.toLowerCase();
+        const pairedFile = driveFilesCache.find(f => f.name.trim().toLowerCase() === pairedName);
+        
+        const pairedPromise = pairedFile ? exportDocText(pairedFile.id) : Promise.resolve(null);
+        
+        pairedPromise.then(pairedText => {
+          const built = buildSentencesWithTranslation(text, pairedText);
+          const phraseCount = built.sentences ? built.sentences.length : 0;
+          
+          row.innerHTML = ''; // Limpiar estado de carga
+          
+          const icon = document.createElement('div');
+          icon.className = 'lib-icon';
+          icon.textContent = '📄';
+          
+          const info = document.createElement('div');
+          info.className = 'lib-info';
+          const title = document.createElement('p');
+          title.className = 'lib-title';
+          title.textContent = file.name;
+          
+          const sub = document.createElement('p');
+          sub.className = 'lib-sub';
+          sub.textContent = `${wordCount} palabras · ${phraseCount} frases`;
+          
+          info.appendChild(title);
+          info.appendChild(sub);
+          
+          const playBtn = document.createElement('button');
+          playBtn.className = 'lib-play';
+          playBtn.textContent = '▶';
+          playBtn.title = 'Practicar shadowing';
+          
+          playBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            els.textInput.value = text;
+            updateWordCount();
+            currentSource = 'drive';
+            setLoadedTitle(file.name.trim());
+            pendingTranslationRawText = pairedText;
+            pairedTranslationSentences = null;
+            beginShadowing();
+          });
+          
+          row.appendChild(icon);
+          row.appendChild(info);
+          row.appendChild(playBtn);
+          
+          row.addEventListener('click', () => {
+            els.textInput.value = text;
+            updateWordCount();
+            currentSource = 'drive';
+            setLoadedTitle(file.name.trim());
+            pendingTranslationRawText = pairedText;
+            pairedTranslationSentences = null;
+          });
+        }).catch(err => {
+          row.querySelector('.lib-sub').textContent = 'Error al cargar (ES)';
+        });
+      }).catch(err => {
+        row.querySelector('.lib-sub').textContent = 'Error al cargar texto';
       });
+    }
   } catch (err) {
     els.driveFileList.innerHTML = `<p class="hint">Error al conectar con Drive: ${err.message}</p>`;
   }
 });
 
-async function exportDocText(fileId) {
-  const url = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=text/plain&key=${Settings.data.driveApiKey}`;
-  const resp = await fetch(url);
-  return await resp.text();
-}
-
-async function loadDriveDoc(file) {
-  els.driveFileList.innerHTML = '<p class="hint">Cargando texto...</p>';
-  pairedTranslationSentences = null;
-  pendingTranslationRawText = null;
-  try {
-    const text = await exportDocText(file.id);
-    els.textInput.value = text;
-    updateWordCount();
-    currentSource = 'drive';
-    setLoadedTitle(file.name.trim());
-
-    const pairedName = `${file.name.trim()} (ES)`.toLowerCase();
-    const pairedFile = driveFilesCache.find(f => f.name.trim().toLowerCase() === pairedName);
-    if (pairedFile) {
-      pendingTranslationRawText = await exportDocText(pairedFile.id);
-    }
-
-    els.driveFileList.classList.add('hidden');
-  } catch (err) {
-    alert('No se pudo cargar el documento: ' + err.message);
-  }
-}
 
 /* ============================================================
-   Preparar y guardar el texto actual en la biblioteca
+   Preparar texto para la práctica
    ============================================================ */
 
 let sentences = [];
@@ -801,19 +740,6 @@ function prepareSentences() {
   }
   sentences = built.sentences;
   pairedTranslationSentences = built.translations ? { sentences: built.translations } : null;
-
-  const title = currentSource === 'drive' && currentTitle
-    ? currentTitle
-    : (text.slice(0, 40).trim() + (text.length > 40 ? '...' : ''));
-
-  RecentTexts.save({
-    title,
-    text,
-    source: currentSource,
-    wordCount: countWords(text),
-    phraseCount: sentences.length,
-    savedAt: Date.now(),
-  });
 
   currentIndex = 0;
   starredSet = new Set();
@@ -945,10 +871,6 @@ els.playBtn.addEventListener('click', () => {
   if (isSpeaking) stopSpeaking(); else playCurrent();
 });
 
-els.repeatBtn.addEventListener('click', () => {
-  stopSpeaking();
-  playCurrent();
-});
 
 function goToNext(withHaptic) {
   if (currentIndex < sentences.length - 1) {
@@ -1090,7 +1012,6 @@ els.reverseBtn.addEventListener('click', () => {
 const ipaDict = {};
 let ipaLoaded = false;
 
-// Descargamos y parseamos el archivo de texto en memoria
 fetch('./en_US.txt')
   .then(res => {
     if (!res.ok) throw new Error('No se encontró el archivo en_US.txt local.');
@@ -1100,7 +1021,6 @@ fetch('./en_US.txt')
     text.split('\n').forEach(line => {
       const parts = line.split('\t');
       if (parts.length === 2) {
-        // Normalizamos en minúsculas para búsquedas más estables
         ipaDict[parts[0].toLowerCase().trim()] = parts[1].trim();
       }
     });
@@ -1113,28 +1033,23 @@ fetch('./en_US.txt')
    ============================================================ */
 
 let popupCurrentWord = null;
+let popupSpeaking = false;
+let isLoopingWord = false;
+let loopTimeoutId = null;
 
 /**
  * Busca la pronunciación en el diccionario local cargado en memoria.
- * Incluye lógica de fallback para encontrar variantes si la palabra
- * exacta no se encuentra.
  */
 async function fetchPhonetic(word) {
   if (!ipaLoaded) return '···';
-
   const clean = word.toLowerCase().replace(/[^a-z'-]/gi, '');
   if (!clean) return null;
-
-  // 1. Intento directo (la palabra tal cual en el diccionario)
   if (ipaDict[clean]) return ipaDict[clean];
-
-  // 2. Fallbacks: buscar la raíz quitando sufijos comunes
   if (clean.endsWith('s')) {
     const sinS = clean.slice(0, -1);
     if (ipaDict[sinS]) return ipaDict[sinS];
     if (clean.endsWith('es') && ipaDict[clean.slice(0, -2)]) return ipaDict[clean.slice(0, -2)];
   }
-  
   if (clean.endsWith('ing')) {
     const stem = clean.slice(0, -3);
     if (ipaDict[stem]) return ipaDict[stem];
@@ -1143,7 +1058,6 @@ async function fetchPhonetic(word) {
       if (ipaDict[stem.slice(0, -1)]) return ipaDict[stem.slice(0, -1)];
     }
   }
-  
   if (clean.endsWith('ed')) {
     const stem = clean.slice(0, -2);
     if (ipaDict[stem]) return ipaDict[stem];
@@ -1152,12 +1066,8 @@ async function fetchPhonetic(word) {
       if (ipaDict[stem.slice(0, -1)]) return ipaDict[stem.slice(0, -1)];
     }
   }
-
-  // Si después de todo no se encuentra, retornamos null
   return null;
 }
-
-let popupSpeaking = false;
 
 function setPopupPlayIcon(playing) {
   popupSpeaking = playing;
@@ -1171,6 +1081,21 @@ async function playPopupWord() {
   setPopupPlayIcon(false);
 }
 
+// Lógica de bucle
+async function loopPopupWord() {
+  if (!isLoopingWord || !popupCurrentWord) return;
+  await playPopupWord();
+  if (isLoopingWord) {
+    loopTimeoutId = setTimeout(loopPopupWord, 800); 
+  }
+}
+
+function stopPopupLoop() {
+  isLoopingWord = false;
+  clearTimeout(loopTimeoutId);
+  els.wordPopupLoopBtn.classList.remove('active');
+}
+
 function openWordPopup(word) {
   popupCurrentWord = word;
   els.wordPopupWord.textContent = word;
@@ -1179,6 +1104,7 @@ function openWordPopup(word) {
   els.wordPopupOverlay.classList.remove('hidden');
   syncSpeedUI(Settings.data.rate);
 
+  stopPopupLoop();
   playPopupWord();
 
   fetchPhonetic(word).then(ph => {
@@ -1192,6 +1118,7 @@ function openWordPopup(word) {
 
 function closeWordPopup() {
   window.speechSynthesis.cancel();
+  stopPopupLoop(); 
   setPopupPlayIcon(false);
   els.wordPopupOverlay.classList.add('hidden');
   popupCurrentWord = null;
@@ -1203,11 +1130,25 @@ els.wordPopupOverlay.addEventListener('click', (e) => {
 });
 
 els.wordPopupPlayBtn.addEventListener('click', () => {
+  stopPopupLoop(); 
   if (popupSpeaking) {
     window.speechSynthesis.cancel();
     setPopupPlayIcon(false);
   } else {
     playPopupWord();
+  }
+});
+
+els.wordPopupLoopBtn.addEventListener('click', () => {
+  if (isLoopingWord) {
+    stopPopupLoop();
+    window.speechSynthesis.cancel();
+    setPopupPlayIcon(false);
+  } else {
+    isLoopingWord = true;
+    els.wordPopupLoopBtn.classList.add('active');
+    window.speechSynthesis.cancel();
+    loopPopupWord(); 
   }
 });
 
@@ -1294,7 +1235,6 @@ els.backFromVocabBtn.addEventListener('click', () => {
    ============================================================ */
 
 applySettingsToUI();
-renderRecentList();
 updateWordCount();
 updateResumeButton();
 els.translationRow.classList.toggle('hidden', !(Settings.data.translateSourceDoc || Settings.data.translateSourceMyMemory));
