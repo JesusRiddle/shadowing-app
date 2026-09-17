@@ -698,6 +698,27 @@ els.loadDriveBtn.addEventListener('click', async () => {
             setLoadedTitle(file.name.trim());
             pendingTranslationRawText = pairedText;
             pairedTranslationSentences = null;
+
+            els.textInput.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+
+            setTimeout(() => {
+              const btn = document.getElementById('startShadowBtn');
+
+              if (!btn) return;
+
+              // Reinicia la animación si ya estaba activa
+              btn.classList.remove('guide-highlight');
+              void btn.offsetWidth;
+
+              btn.classList.add('guide-highlight');
+
+              setTimeout(() => {
+                btn.classList.remove('guide-highlight');
+              }, 2500);
+            }, 600);
           });
         }).catch(err => {
           row.querySelector('.lib-sub').textContent = 'Error al cargar (ES)';
