@@ -292,21 +292,21 @@ function preprocessAcronymsForSpeech(text) {
 }
 
 const TTS = {
-  async speak(text, { force = false } = {}) {
+  async speak(text, { force = false, rate = null } = {}) {
     if (isMuted && !force) return;
     text = preprocessAcronymsForSpeech(text);
     if (Settings.data.ttsMode === 'external' && Settings.data.externalEndpoint && Settings.data.externalApiKey) {
       try {
-        await this.speakExternal(text);
+        await this.speakExternal(text, rate);
         return;
       } catch (err) {
         console.error('Fallo la API externa, usando voz del navegador como respaldo:', err);
       }
     }
-    await this.speakBrowser(text);
+    await this.speakBrowser(text, rate);
   },
 
-  speakBrowser(text) {
+  speakBrowser(text, rate = null) {
     return new Promise((resolve) => {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
@@ -314,14 +314,14 @@ const TTS = {
       const chosen = voices.find(v => v.name === Settings.data.voiceName);
       if (chosen) utter.voice = chosen;
       utter.lang = 'en-US';
-      utter.rate = Settings.data.rate || 1;
+      utter.rate = rate ?? Settings.data.rate ?? 1;
       utter.onend = resolve;
       utter.onerror = resolve;
       window.speechSynthesis.speak(utter);
     });
   },
 
-  async speakExternal(text) {
+  async speakExternal(text, rate = null) {
     const resp = await fetch(Settings.data.externalEndpoint, {
       method: 'POST',
       headers: {
@@ -334,7 +334,7 @@ const TTS = {
     const blob = await resp.blob();
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
-    audio.playbackRate = Settings.data.rate || 1;
+    audio.playbackRate = rate ?? Settings.data.rate ?? 1;
     await new Promise((resolve, reject) => {
       audio.onended = resolve;
       audio.onerror = reject;
@@ -474,8 +474,40 @@ let driveFilesCache = [];
 let pairedTranslationSentences = null;
 let pendingTranslationRawText = null;
 
+function getTextInputValue() {
+  let text = '';
+  
+  els.textInput.childNodes.forEach(node => {
+    if (node.nodeName === 'BR') {
+      text += '\n';
+    } else {
+      text += node.textContent || '';
+    }
+  });
+
+  return text
+    .replace(/\u00a0/g, ' ')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
+function setTextInputValue(text) {
+  const normalized = (text || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\n{3,}/g, '\n\n');
+
+  const escaped = normalized
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  els.textInput.innerHTML = escaped.replace(/\n/g, '<br>');
+}
+
 function updateWordCount() {
-  const n = countWords(els.textInput.value);
+  const n = countWords(getTextInputValue());
   els.wordCountLabel.textContent = `${n} palabra${n === 1 ? '' : 's'}`;
 }
 
@@ -495,6 +527,79 @@ els.textInput.addEventListener('input', () => {
   pendingTranslationRawText = null;
   currentSource = 'pasted';
   setLoadedTitle(null);
+});
+
+function getWordAtPoint(x, y) {
+  let range = null;
+
+  if (document.caretRangeFromPoint) {
+    range = document.caretRangeFromPoint(x, y);
+  } else if (document.caretPositionFromPoint) {
+    const position = document.caretPositionFromPoint(x, y);
+
+    if (position) {
+      range = document.createRange();
+      range.setStart(position.offsetNode, position.offset);
+      range.collapse(true);
+    }
+  }
+
+  if (!range || !els.textInput.contains(range.startContainer)) {
+    return null;
+  }
+
+  let node = range.startContainer;
+  let offset = range.startOffset;
+
+  if (node.nodeType !== Node.TEXT_NODE) {
+    return null;
+  }
+
+  const text = node.textContent || '';
+
+  if (!text.trim()) {
+    return null;
+  }
+
+  if (offset >= text.length) {
+    offset = text.length - 1;
+  }
+
+  if (!/[\p{L}\p{N}'’-]/u.test(text[offset])) {
+    offset--;
+
+    if (offset < 0 || !/[\p{L}\p{N}'’-]/u.test(text[offset])) {
+      return null;
+    }
+  }
+
+  let start = offset;
+  let end = offset + 1;
+
+  while (
+    start > 0 &&
+    /[\p{L}\p{N}'’-]/u.test(text[start - 1])
+  ) {
+    start--;
+  }
+
+  while (
+    end < text.length &&
+    /[\p{L}\p{N}'’-]/u.test(text[end])
+  ) {
+    end++;
+  }
+
+  return text.slice(start, end);
+}
+
+els.textInput.addEventListener('click', (e) => {
+  const word = getWordAtPoint(e.clientX, e.clientY);
+
+  if (!word) return;
+
+  window.speechSynthesis.cancel();
+  TTS.speak(word, { force: true, rate: 0.6 });
 });
 
 /* ============================================================
@@ -678,7 +783,7 @@ els.loadDriveBtn.addEventListener('click', async () => {
           
           playBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            els.textInput.value = text;
+            setTextInputValue(text);
             updateWordCount();
             currentSource = 'drive';
             setLoadedTitle(file.name.trim());
@@ -692,7 +797,7 @@ els.loadDriveBtn.addEventListener('click', async () => {
           row.appendChild(playBtn);
           
           row.addEventListener('click', () => {
-            els.textInput.value = text;
+            setTextInputValue(text);
             updateWordCount();
             currentSource = 'drive';
             setLoadedTitle(file.name.trim());
@@ -748,7 +853,7 @@ function updateResumeButton() {
 }
 
 function prepareSentences() {
-  const text = els.textInput.value.trim();
+  const text = getTextInputValue().trim();
   if (!text) {
     alert('Pega o carga un texto primero.');
     return false;
@@ -889,7 +994,18 @@ async function playCurrent() {
 }
 
 els.playBtn.addEventListener('click', () => {
-  if (isSpeaking) stopSpeaking(); else playCurrent();
+  if (isMuted) {
+    setMuted(false);
+    stopSpeaking();
+    playCurrent();
+    return;
+  }
+
+  if (isSpeaking) {
+    stopSpeaking();
+  } else {
+    playCurrent();
+  }
 });
 
 
@@ -1222,8 +1338,36 @@ function renderVocabList() {
 
     const playBtn = document.createElement('button');
     playBtn.textContent = '▶';
-    playBtn.addEventListener('click', (e) => { e.stopPropagation(); TTS.speak(item.word); });
+    playBtn.className = 'play-vocab-btn';
 
+    let isVocabPlaying = false;
+
+    playBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+
+      // Si está reproduciendo, detener
+      if (isVocabPlaying) {
+        window.speechSynthesis.cancel();
+        isVocabPlaying = false;
+        playBtn.textContent = '▶';
+        return;
+      }
+
+      // Si el MUTE estaba activo, desactivarlo
+      if (isMuted) {
+        setMuted(false);
+      }
+
+      isVocabPlaying = true;
+      playBtn.textContent = '⏸';
+
+      await TTS.speak(item.word);
+
+      // Solo volver a Play cuando terminó realmente
+      isVocabPlaying = false;
+      playBtn.textContent = '▶';
+    });
+    
     const removeBtn = document.createElement('button');
     removeBtn.textContent = '🗑';
     removeBtn.className = 'remove';

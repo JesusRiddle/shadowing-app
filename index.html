@@ -199,7 +199,8 @@
       <div class="divider"><span>o</span></div>
 
       <label for="textInput">Pega tu texto en inglés aquí:</label>
-      <textarea id="textInput" rows="9" placeholder="Pega aquí el texto que te generó Gemini..."></textarea>
+      <div id="textInput" class="text-input-editor" contenteditable="true" role="textbox" aria-multiline="true"
+        data-placeholder="Pega aquí el texto que te generó Gemini..." spellcheck="true"></div>
       <div class="text-meta">
         <span id="wordCountLabel">0 palabras</span>
         <span id="loadedTitleLabel" class="loaded-title hidden"></span>
@@ -232,15 +233,21 @@
     <section class="sentence-card" id="sentenceCard">
       <div class="card-badge-row">
         <span id="indexBadge" class="index-badge">1</span>
-        <button id="muteBtn" class="mute-btn" title="Silenciar tarjetas">🔊</button>
       </div>
+
+      <button id="muteBtn" class="mute-btn" title="Silenciar tarjetas">🔊</button>
+
       <button id="starBtn" class="star-btn" title="Marcar frase como difícil">☆</button>
+
       <p id="sentenceDisplay">—</p>
+
       <div class="card-divider" id="cardDivider"></div>
+
       <div id="translationRow" class="translation-row hidden">
-        <span id="translationSourceIcon" class="translation-source-icon"></span>
         <p id="translationDisplay" class="translation">—</p>
       </div>
+
+      <span id="translationSourceIcon" class="translation-source-icon"></span>
     </section>
 
     <div class="controls">
